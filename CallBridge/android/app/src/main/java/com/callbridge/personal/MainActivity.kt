@@ -1,14 +1,22 @@
 package com.callbridge.personal
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -16,6 +24,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.callbridge.personal.calling.CallManager
+import com.callbridge.personal.calling.CallUiState
 import com.callbridge.personal.navigation.Screen
 import com.callbridge.personal.ui.activecall.ActiveCallScreen
 import com.callbridge.personal.ui.components.CallBridgeBottomBar
@@ -30,28 +40,72 @@ import com.callbridge.personal.ui.settings.SettingsScreen
 import com.callbridge.personal.ui.theme.CallBridgeTheme
 
 class MainActivity : ComponentActivity() {
+
+    private val app by lazy { application as CallBridgeApplication }
+    val callManager: CallManager by lazy { app.callManager }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             CallBridgeTheme {
-                MainApp()
+                MainApp(
+                    callManager = callManager,
+                    onCheckAudioPermission = { onGranted ->
+                        checkAndRequestAudioPermission(onGranted)
+                    }
+                )
             }
+        }
+    }
+
+    private var pendingCallAction: (() -> Unit)? = null
+
+    private val permissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            pendingCallAction?.invoke()
+        } else {
+            Toast.makeText(this, "Microphone permission is required to place calls", Toast.LENGTH_LONG).show()
+        }
+        pendingCallAction = null
+    }
+
+    private fun checkAndRequestAudioPermission(onGranted: () -> Unit) {
+        val granted = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (granted) {
+            onGranted()
+        } else {
+            pendingCallAction = onGranted
+            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
         }
     }
 }
 
 @Composable
-fun MainApp(navController: NavHostController = rememberNavController()) {
+fun MainApp(
+    callManager: CallManager,
+    onCheckAudioPermission: (() -> Unit) -> Unit,
+    navController: NavHostController = rememberNavController()
+) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // Show BottomBar only on primary top-level tabs
+    val callState by callManager.callState.collectAsState()
+    val isMuted by callManager.isMuted.collectAsState()
+    val isSpeakerOn by callManager.isSpeakerOn.collectAsState()
+
+    // Show BottomBar only on primary top-level tabs when not in an active call
     val isBottomBarVisible = currentRoute in listOf(
         Screen.Dashboard.route,
         Screen.Contacts.route,
         Screen.History.route,
         Screen.Settings.route
-    )
+    ) && (callState is CallUiState.Idle || callState is CallUiState.Ended || callState is CallUiState.Failed)
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -110,12 +164,19 @@ fun MainApp(navController: NavHostController = rememberNavController()) {
                     initialNumber = initialNumber,
                     onNavigateBack = { navController.popBackStack() },
                     onStartCall = { destination ->
-                        navController.navigate(Screen.ActiveCall.createRoute(destination))
+                        onCheckAudioPermission {
+                            navController.navigate(Screen.ActiveCall.createRoute(destination))
+                            // Start call
+                            val activity = navController.context as? ComponentActivity
+                            activity?.lifecycleScope?.let { scope ->
+                                callManager.initiateCall(destination, "", scope)
+                            }
+                        }
                     }
                 )
             }
 
-            // Active Call
+            // Active Call Screen
             composable(
                 route = Screen.ActiveCall.route,
                 arguments = listOf(
@@ -131,7 +192,14 @@ fun MainApp(navController: NavHostController = rememberNavController()) {
                 ActiveCallScreen(
                     destination = destination,
                     contactName = contactName,
+                    callState = callState,
+                    isMuted = isMuted,
+                    isSpeakerOn = isSpeakerOn,
+                    onToggleMute = { callManager.toggleMute() },
+                    onToggleSpeaker = { callManager.toggleSpeaker() },
                     onEndCall = {
+                        callManager.endCall()
+                        callManager.resetStateToIdle()
                         navController.popBackStack(Screen.Dashboard.route, inclusive = false)
                     }
                 )
@@ -147,7 +215,13 @@ fun MainApp(navController: NavHostController = rememberNavController()) {
                         navController.navigate(Screen.ContactDetail.createRoute(contactId))
                     },
                     onCallNumber = { number ->
-                        navController.navigate(Screen.DialPad.createRoute(number))
+                        onCheckAudioPermission {
+                            navController.navigate(Screen.ActiveCall.createRoute(number))
+                            val activity = navController.context as? ComponentActivity
+                            activity?.lifecycleScope?.let { scope ->
+                                callManager.initiateCall(number, "", scope)
+                            }
+                        }
                     }
                 )
             }
@@ -165,7 +239,13 @@ fun MainApp(navController: NavHostController = rememberNavController()) {
                         navController.navigate(Screen.AddEditContact.createRoute(id))
                     },
                     onCallNumber = { number ->
-                        navController.navigate(Screen.DialPad.createRoute(number))
+                        onCheckAudioPermission {
+                            navController.navigate(Screen.ActiveCall.createRoute(number))
+                            val activity = navController.context as? ComponentActivity
+                            activity?.lifecycleScope?.let { scope ->
+                                callManager.initiateCall(number, "", scope)
+                            }
+                        }
                     }
                 )
             }
@@ -195,7 +275,13 @@ fun MainApp(navController: NavHostController = rememberNavController()) {
                         navController.navigate(Screen.CallDetail.createRoute(callId))
                     },
                     onCallNumber = { number ->
-                        navController.navigate(Screen.DialPad.createRoute(number))
+                        onCheckAudioPermission {
+                            navController.navigate(Screen.ActiveCall.createRoute(number))
+                            val activity = navController.context as? ComponentActivity
+                            activity?.lifecycleScope?.let { scope ->
+                                callManager.initiateCall(number, "", scope)
+                            }
+                        }
                     }
                 )
             }
@@ -210,7 +296,13 @@ fun MainApp(navController: NavHostController = rememberNavController()) {
                     callId = callId,
                     onNavigateBack = { navController.popBackStack() },
                     onCallNumber = { number ->
-                        navController.navigate(Screen.DialPad.createRoute(number))
+                        onCheckAudioPermission {
+                            navController.navigate(Screen.ActiveCall.createRoute(number))
+                            val activity = navController.context as? ComponentActivity
+                            activity?.lifecycleScope?.let { scope ->
+                                callManager.initiateCall(number, "", scope)
+                            }
+                        }
                     }
                 )
             }
