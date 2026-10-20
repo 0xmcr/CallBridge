@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,25 +27,53 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.callbridge.personal.data.local.entity.ContactEntity
+import com.callbridge.personal.data.repository.ContactsRepository
+import com.callbridge.personal.ui.util.FormatUtils
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditContactScreen(
     contactId: String = "",
+    contactsRepository: ContactsRepository,
     onNavigateBack: () -> Unit,
     onSaveSuccess: () -> Unit
 ) {
-    val isEditing = contactId.isNotEmpty()
-    var name by remember { mutableStateOf(if (isEditing) "John Miller" else "") }
-    var phone by remember { mutableStateOf(if (isEditing) "+12025550143" else "+1") }
-    var company by remember { mutableStateOf(if (isEditing) "Acme Logistics" else "") }
-    var notes by remember { mutableStateOf(if (isEditing) "Purchasing manager" else "") }
+    val isEditing = contactId.isNotBlank()
+    val scope = rememberCoroutineScope()
+
+    var name by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("+1") }
+    var company by remember { mutableStateOf("") }
+    var notes by remember { mutableStateOf("") }
+    var originalCreatedAt by remember { mutableStateOf(System.currentTimeMillis()) }
+    var isSaving by remember { mutableStateOf(false) }
+
+    LaunchedEffect(contactId) {
+        if (isEditing) {
+            val existing = contactsRepository.getContactById(contactId).firstOrNull()
+            if (existing != null) {
+                name = existing.displayName
+                phone = existing.phoneE164
+                company = existing.company ?: ""
+                notes = existing.notes ?: ""
+                originalCreatedAt = existing.createdAt
+            }
+        }
+    }
+
+    val isFormValid = name.isNotBlank() && phone.replace("[^0-9]".toRegex(), "").length >= 10
 
     Scaffold(
         topBar = {
@@ -73,6 +102,7 @@ fun AddEditContactScreen(
                 value = name,
                 onValueChange = { name = it },
                 label = { Text("Full Name *") },
+                placeholder = { Text("e.g. John Miller") },
                 leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -83,7 +113,9 @@ fun AddEditContactScreen(
                 value = phone,
                 onValueChange = { phone = it },
                 label = { Text("Phone Number (E.164) *") },
+                placeholder = { Text("+1 (202) 555-0143") },
                 leadingIcon = { Icon(Icons.Filled.Phone, contentDescription = null) },
+                supportingText = { Text("US numbers should include +1 prefix") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
@@ -93,6 +125,7 @@ fun AddEditContactScreen(
                 value = company,
                 onValueChange = { company = it },
                 label = { Text("Company (Optional)") },
+                placeholder = { Text("e.g. Acme Corp") },
                 leadingIcon = { Icon(Icons.Filled.Business, contentDescription = null) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -103,6 +136,7 @@ fun AddEditContactScreen(
                 value = notes,
                 onValueChange = { notes = it },
                 label = { Text("Notes / Follow-up (Optional)") },
+                placeholder = { Text("Meeting notes, timezone preferences, etc.") },
                 leadingIcon = { Icon(Icons.Filled.Notes, contentDescription = null) },
                 minLines = 3,
                 maxLines = 5,
@@ -113,12 +147,38 @@ fun AddEditContactScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = onSaveSuccess,
+                onClick = {
+                    if (!isFormValid || isSaving) return@Button
+                    isSaving = true
+                    scope.launch {
+                        val normalizedPhone = FormatUtils.normalizePhoneNumber(phone)
+                        val entity = ContactEntity(
+                            id = if (isEditing) contactId else UUID.randomUUID().toString(),
+                            displayName = name.trim(),
+                            phoneE164 = normalizedPhone,
+                            company = company.trim().ifEmpty { null },
+                            notes = notes.trim().ifEmpty { null },
+                            createdAt = if (isEditing) originalCreatedAt else System.currentTimeMillis(),
+                            updatedAt = System.currentTimeMillis()
+                        )
+                        contactsRepository.saveContact(entity)
+                        isSaving = false
+                        onSaveSuccess()
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = name.isNotBlank() && phone.isNotBlank(),
+                enabled = isFormValid && !isSaving,
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text(if (isEditing) "Update Contact" else "Save Contact")
+                if (isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.height(20.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text(if (isEditing) "Update Contact" else "Save Contact")
+                }
             }
         }
     }
