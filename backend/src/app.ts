@@ -30,6 +30,22 @@ app.use((req, res, next) => {
   next();
 });
 
+// Root welcome & status endpoint
+app.get('/', (_req: Request, res: Response) => {
+  res.status(200).json({
+    service: 'CallBridge Voice Backend',
+    status: 'online',
+    version: '1.0.0',
+    description: 'VoIP-to-PSTN Calling Bridge from Bangladesh to USA',
+    endpoints: {
+      health: '/api/v1/health',
+      token: '/api/v1/voice/token',
+      outgoing: '/api/v1/voice/outgoing',
+      statusCallback: '/api/v1/voice/status'
+    }
+  });
+});
+
 // Apply rate limiter to API routes
 app.use('/api/v1', rateLimiter);
 

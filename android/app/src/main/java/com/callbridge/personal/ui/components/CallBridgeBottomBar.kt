@@ -56,7 +56,10 @@ fun CallBridgeBottomBar(
     currentRoute: String?,
     onNavigateToRoute: (String) -> Unit
 ) {
-    NavigationBar {
+    androidx.compose.material3.NavigationBar(
+        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
+        tonalElevation = 8.dp
+    ) {
         BottomNavigationItems.forEach { item ->
             val isSelected = currentRoute == item.route
             NavigationBarItem(

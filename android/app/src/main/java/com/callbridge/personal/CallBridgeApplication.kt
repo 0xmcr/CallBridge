@@ -30,6 +30,10 @@ class CallBridgeApplication : Application() {
         CallManager(this, voiceApiService, callHistoryRepository)
     }
 
+    val themeManager: com.callbridge.personal.ui.theme.ThemeManager by lazy {
+        com.callbridge.personal.ui.theme.ThemeManager(this)
+    }
+
     override fun onCreate() {
         super.onCreate()
     }

@@ -1,7 +1,12 @@
 package com.callbridge.personal.ui.dialpad
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,13 +17,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +35,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,27 +44,40 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.callbridge.personal.ui.theme.CallGreen
+import com.callbridge.personal.ui.theme.StatusWarning
+import com.callbridge.personal.ui.util.DtmfPlayer
+import com.callbridge.personal.ui.util.FormatUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DialPadScreen(
     initialNumber: String = "",
+    dialSoundEnabled: Boolean = true,
     onNavigateBack: () -> Unit,
     onStartCall: (String) -> Unit
 ) {
-    var phoneNumber by remember {
-        mutableStateOf(if (initialNumber.isNotEmpty()) initialNumber else "+1")
+    val haptic = LocalHapticFeedback.current
+
+    // Internal state stores only the 10 national digits (e.g. "2025550143")
+    var nationalDigits by remember {
+        mutableStateOf(FormatUtils.extractNationalDigits(initialNumber))
+    }
+
+    val validation = remember(nationalDigits) {
+        FormatUtils.validateNanp(nationalDigits)
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Dial Pad") },
+                title = { Text("Dial Pad", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -62,7 +85,10 @@ fun DialPadScreen(
                             contentDescription = "Back"
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
             )
         }
     ) { paddingValues ->
@@ -70,38 +96,73 @@ fun DialPadScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterVertically,
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Display Number
+            // Display Number Area
             Column(
-                horizontalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp)
             ) {
+                // Large Formatted Telephone Number Display
                 Text(
-                    text = phoneNumber,
-                    style = MaterialTheme.typography.headlineLarge.copy(fontSize = 36.sp),
+                    text = validation.formatted,
+                    style = MaterialTheme.typography.headlineLarge.copy(
+                        fontSize = if (nationalDigits.length > 7) 32.sp else 36.sp,
+                        letterSpacing = 1.sp
+                    ),
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.Center,
-                    maxLines = 2
+                    maxLines = 1
                 )
+
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "United States (+1)",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
+
+                // Real-time Validity Indicator Pill
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = when {
+                        validation.isValid -> CallGreen.copy(alpha = 0.15f)
+                        nationalDigits.length == 10 -> StatusWarning.copy(alpha = 0.15f)
+                        else -> MaterialTheme.colorScheme.surfaceVariant
+                    }
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                    ) {
+                        if (validation.isValid) {
+                            Icon(
+                                imageVector = Icons.Filled.CheckCircle,
+                                contentDescription = null,
+                                tint = CallGreen,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                        }
+                        Text(
+                            text = validation.message,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = when {
+                                validation.isValid -> CallGreen
+                                nationalDigits.length == 10 -> StatusWarning
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    }
+                }
             }
 
             // Keypad (4 rows)
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 val keys = listOf(
                     listOf("1" to "", "2" to "ABC", "3" to "DEF"),
@@ -116,15 +177,22 @@ fun DialPadScreen(
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         row.forEach { (digit, sub) ->
-                            KeypadButton(
+                            DialKeyButton(
                                 digit = digit,
                                 sub = sub,
                                 onClick = {
-                                    phoneNumber += digit
-                                },
-                                onLongClick = {
-                                    if (digit == "0") {
-                                        phoneNumber += "+"
+                                    if (dialSoundEnabled) {
+                                        DtmfPlayer.playTone(digit.first())
+                                    }
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+
+                                    // Strictly limit to 10 national digits
+                                    if (digit in "0".."9") {
+                                        if (nationalDigits.length < 10) {
+                                            nationalDigits += digit
+                                        } else {
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        }
                                     }
                                 }
                             )
@@ -133,50 +201,63 @@ fun DialPadScreen(
                 }
             }
 
-            // Bottom Actions (Call & Backspace)
+            // Bottom Actions Row: Spacer | Call FAB | Backspace Button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 32.dp),
+                    .padding(bottom = 16.dp, top = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Invisible placeholder for alignment
-                Box(modifier = Modifier.size(64.dp))
+                // Invisible balance box
+                Box(modifier = Modifier.size(68.dp))
 
-                // Green Call Button
+                // Primary Call Button (Glowing Emerald)
                 FloatingActionButton(
                     onClick = {
-                        if (phoneNumber.length > 2) {
-                            onStartCall(phoneNumber)
+                        if (validation.isValid) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onStartCall(validation.e164)
                         }
                     },
                     modifier = Modifier.size(72.dp),
                     shape = CircleShape,
-                    containerColor = CallGreen,
-                    contentColor = MaterialTheme.colorScheme.surface
+                    containerColor = if (validation.isValid) CallGreen else MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = if (validation.isValid) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = if (validation.isValid) 6.dp else 0.dp
+                    )
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Call,
-                        contentDescription = "Start Call",
-                        modifier = Modifier.size(36.dp)
+                        contentDescription = "Place Call",
+                        modifier = Modifier.size(34.dp)
                     )
                 }
 
-                // Backspace Button
-                IconButton(
-                    onClick = {
-                        if (phoneNumber.isNotEmpty()) {
-                            phoneNumber = phoneNumber.dropLast(1)
-                        }
-                    },
-                    modifier = Modifier.size(64.dp)
+                // Backspace Button (Quick Tap to Delete, Long Press to Clear All)
+                Box(
+                    modifier = Modifier.size(68.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    if (phoneNumber.isNotEmpty()) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Backspace,
-                            contentDescription = "Backspace",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    AnimatedVisibility(
+                        visible = nationalDigits.isNotEmpty(),
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        BackspaceKey(
+                            onDelete = {
+                                if (nationalDigits.isNotEmpty()) {
+                                    if (dialSoundEnabled) DtmfPlayer.playDeleteTone()
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    nationalDigits = nationalDigits.dropLast(1)
+                                }
+                            },
+                            onClearAll = {
+                                if (dialSoundEnabled) DtmfPlayer.playDeleteTone()
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                nationalDigits = ""
+                            }
                         )
                     }
                 }
@@ -186,37 +267,72 @@ fun DialPadScreen(
 }
 
 @Composable
-private fun KeypadButton(
+private fun DialKeyButton(
     digit: String,
     sub: String,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit = {}
+    onClick: () -> Unit
 ) {
     Surface(
         modifier = Modifier
             .size(76.dp)
             .clip(CircleShape)
-            .clickable(onClick = onClick),
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                shape = CircleShape
+            ),
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+        onClick = onClick
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterVertically,
-            verticalArrangement = Arrangement.Center
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
         ) {
             Text(
                 text = digit,
                 style = MaterialTheme.typography.titleLarge.copy(fontSize = 28.sp),
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
             )
             if (sub.isNotEmpty()) {
                 Text(
                     text = sub,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 10.sp,
+                        letterSpacing = 1.sp
+                    ),
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun BackspaceKey(
+    onDelete: () -> Unit,
+    onClearAll: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .size(54.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .combinedClickable(
+                onClick = onDelete,
+                onLongClick = onClearAll
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.Backspace,
+            contentDescription = "Delete digit or hold to clear",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(24.dp)
+        )
     }
 }

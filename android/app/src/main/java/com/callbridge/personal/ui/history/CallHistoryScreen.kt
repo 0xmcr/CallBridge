@@ -1,5 +1,6 @@
 package com.callbridge.personal.ui.history
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -114,7 +115,7 @@ fun CallHistoryScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Column(
-                    horizontalAlignment = Alignment.CenterVertically,
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
                     Icon(
@@ -176,9 +177,13 @@ fun CallHistoryItemCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
         )
     ) {
         Row(
