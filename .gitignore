@@ -1,0 +1,62 @@
+# === Android ===
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build/
+/captures
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+output.json
+
+# Android specific
+android/.gradle/
+android/build/
+android/app/build/
+android/app/release/
+android/local.properties
+android/.idea/
+
+# Signing keys
+*.jks
+*.keystore
+signing.properties
+
+# === Backend ===
+backend/node_modules/
+backend/dist/
+backend/.env
+backend/.env.local
+backend/.env.production
+backend/.env.staging
+
+# === General ===
+.env
+.env.*
+!.env.example
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Secrets - NEVER commit these
+twilio-credentials*
+secrets/
