@@ -34,6 +34,8 @@ backend/.env
 backend/.env.local
 backend/.env.production
 backend/.env.staging
+node_modules/
+dist/
 
 # === General ===
 .env
@@ -56,6 +58,9 @@ Thumbs.db
 .vscode/
 *.sublime-project
 *.sublime-workspace
+
+# AI Agents Internal Scratchpads (All specs are maintained under docs/)
+.agents/
 
 # Secrets - NEVER commit these
 twilio-credentials*
