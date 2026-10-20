@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,8 +26,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -35,16 +37,56 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.callbridge.personal.calling.CallUiState
+import com.callbridge.personal.ui.theme.CallGreen
 import com.callbridge.personal.ui.theme.CallRed
+import kotlinx.coroutines.delay
 
 @Composable
 fun ActiveCallScreen(
     destination: String,
     contactName: String = "",
+    callState: CallUiState,
+    isMuted: Boolean,
+    isSpeakerOn: Boolean,
+    onToggleMute: () -> Unit,
+    onToggleSpeaker: () -> Unit,
     onEndCall: () -> Unit
 ) {
-    var isMuted by remember { mutableStateOf(false) }
-    var isSpeakerOn by remember { mutableStateOf(false) }
+    var elapsedSeconds by remember { mutableLongStateOf(0L) }
+
+    // Live timer ticking strictly on Confirmed Connection
+    LaunchedEffect(callState) {
+        if (callState is CallUiState.Connected) {
+            while (true) {
+                delay(1000L)
+                val diff = (System.currentTimeMillis() - callState.connectedAtMillis) / 1000
+                elapsedSeconds = if (diff > 0) diff else 0
+            }
+        } else {
+            elapsedSeconds = 0L
+        }
+    }
+
+    // Auto-return when call ends or fails
+    LaunchedEffect(callState) {
+        if (callState is CallUiState.Ended) {
+            delay(1500L)
+            onEndCall()
+        }
+    }
+
+    val stateText = when (callState) {
+        is CallUiState.Idle -> "Idle"
+        is CallUiState.RequestingPermission -> "Requesting Microphone Permission..."
+        is CallUiState.FetchingToken -> "Securing Twilio Access Token..."
+        is CallUiState.Connecting -> "Connecting to US Telecom Gateway..."
+        is CallUiState.Ringing -> "Ringing..."
+        is CallUiState.Connected -> "Connected (Twilio PSTN)"
+        is CallUiState.Ending -> "Ending Call..."
+        is CallUiState.Ended -> "Call Ended (${callState.durationSeconds}s)"
+        is CallUiState.Failed -> "Call Failed: ${callState.userMessage}"
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -62,7 +104,6 @@ fun ActiveCallScreen(
                 horizontalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(top = 32.dp)
             ) {
-                // Avatar placeholder
                 Box(
                     modifier = Modifier
                         .size(96.dp)
@@ -96,24 +137,42 @@ fun ActiveCallScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                // Call State
-                Text(
-                    text = "Connected",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Medium
-                )
+                // Call State Label
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    if (callState is CallUiState.Connecting || callState is CallUiState.FetchingToken) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.size(8.dp))
+                    }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = stateText,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = if (callState is CallUiState.Failed) CallRed else if (callState is CallUiState.Connected) CallGreen else MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
 
-                // Timer placeholder
-                Text(
-                    text = "00:23",
-                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 24.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Running timer (only visible when connected)
+                if (callState is CallUiState.Connected) {
+                    val minutes = elapsedSeconds / 60
+                    val seconds = elapsedSeconds % 60
+                    Text(
+                        text = String.format("%02d:%02d", minutes, seconds),
+                        style = MaterialTheme.typography.headlineSmall.copy(fontSize = 28.sp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             // Controls
@@ -132,7 +191,8 @@ fun ActiveCallScreen(
                         icon = if (isMuted) Icons.Filled.MicOff else Icons.Filled.Mic,
                         label = if (isMuted) "Unmute" else "Mute",
                         isActive = isMuted,
-                        onClick = { isMuted = !isMuted }
+                        enabled = callState is CallUiState.Connected,
+                        onClick = onToggleMute
                     )
 
                     // Speaker
@@ -140,7 +200,8 @@ fun ActiveCallScreen(
                         icon = Icons.Filled.VolumeUp,
                         label = "Speaker",
                         isActive = isSpeakerOn,
-                        onClick = { isSpeakerOn = !isSpeakerOn }
+                        enabled = callState is CallUiState.Connected || callState is CallUiState.Ringing,
+                        onClick = onToggleSpeaker
                     )
                 }
 
@@ -168,6 +229,7 @@ private fun CallControlButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     isActive: Boolean,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     Column(
@@ -178,9 +240,12 @@ private fun CallControlButton(
                 .size(64.dp)
                 .clip(CircleShape),
             shape = CircleShape,
-            color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+            color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (enabled) 1f else 0.4f)
         ) {
-            IconButton(onClick = onClick) {
+            IconButton(
+                onClick = onClick,
+                enabled = enabled
+            ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = label,
