@@ -18,9 +18,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCall
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Contacts
+import androidx.compose.material.icons.filled.Dialpad
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Card
@@ -108,7 +108,7 @@ fun DashboardScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onNavigateToDialPad,
-                icon = { Icon(Icons.Filled.AddCall, contentDescription = "Dial Pad") },
+                icon = { Icon(Icons.Filled.Dialpad, contentDescription = "Dial Pad") },
                 text = { Text("New Call") },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
@@ -231,7 +231,7 @@ fun DashboardScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(32.dp),
-                            horizontalAlignment = Alignment.CenterVertically,
+                            horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
                             Icon(

@@ -96,12 +96,12 @@ fun ActiveCallScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(vertical = 48.dp, horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterVertically,
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             // Header / Contact info
             Column(
-                horizontalAlignment = Alignment.CenterVertically,
+                horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(top = 32.dp)
             ) {
                 Box(
@@ -177,7 +177,7 @@ fun ActiveCallScreen(
 
             // Controls
             Column(
-                horizontalAlignment = Alignment.CenterVertically,
+                horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(36.dp),
                 modifier = Modifier.padding(bottom = 32.dp)
             ) {
@@ -233,7 +233,7 @@ private fun CallControlButton(
     onClick: () -> Unit
 ) {
     Column(
-        horizontalAlignment = Alignment.CenterVertically
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Surface(
             modifier = Modifier
