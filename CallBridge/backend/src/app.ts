@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import healthRouter from './routes/health';
+import voiceRouter from './routes/voice';
 import { rateLimiter } from './middleware/rateLimiter';
 import { errorHandler } from './middleware/errorHandler';
 
@@ -34,6 +35,7 @@ app.use('/api/v1', rateLimiter);
 
 // Routes
 app.use('/api/v1', healthRouter);
+app.use('/api/v1/voice', voiceRouter);
 
 // 404 Handler
 app.use((req: Request, res: Response) => {
