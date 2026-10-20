@@ -10,6 +10,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -54,7 +56,60 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val themeMode by themeManager.themeMode.collectAsState()
+            var showFirstTimePermissionDialog by androidx.compose.runtime.remember {
+                androidx.compose.runtime.mutableStateOf(
+                    ContextCompat.checkSelfPermission(
+                        this,
+                        Manifest.permission.RECORD_AUDIO
+                    ) != PackageManager.PERMISSION_GRANTED
+                )
+            }
+
             CallBridgeTheme(themeMode = themeMode) {
+                if (showFirstTimePermissionDialog) {
+                    androidx.compose.material3.AlertDialog(
+                        onDismissRequest = { showFirstTimePermissionDialog = false },
+                        icon = {
+                            androidx.compose.material3.Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Filled.Phone,
+                                contentDescription = null,
+                                tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(36.dp)
+                            )
+                        },
+                        title = {
+                            androidx.compose.material3.Text(
+                                "Microphone Access Required",
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                            )
+                        },
+                        text = {
+                            androidx.compose.material3.Text(
+                                "CallBridge transmits high-definition VoIP audio to regular US mobile and landline phones. Microphone access is required so your recipients can hear you.\n\nYour voice audio is never recorded, stored, or synced to any cloud servers.",
+                                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        confirmButton = {
+                            androidx.compose.material3.Button(
+                                onClick = {
+                                    showFirstTimePermissionDialog = false
+                                    permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                }
+                            ) {
+                                androidx.compose.material3.Text("Grant Microphone Access")
+                            }
+                        },
+                        dismissButton = {
+                            androidx.compose.material3.TextButton(
+                                onClick = { showFirstTimePermissionDialog = false }
+                            ) {
+                                androidx.compose.material3.Text("Not Now")
+                            }
+                        }
+                    )
+                }
+
                 MainApp(
                     callManager = callManager,
                     contactsRepository = contactsRepository,
