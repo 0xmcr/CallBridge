@@ -26,6 +26,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.callbridge.personal.calling.CallManager
 import com.callbridge.personal.calling.CallUiState
+import com.callbridge.personal.data.repository.CallHistoryRepository
+import com.callbridge.personal.data.repository.ContactsRepository
 import com.callbridge.personal.navigation.Screen
 import com.callbridge.personal.ui.activecall.ActiveCallScreen
 import com.callbridge.personal.ui.components.CallBridgeBottomBar
@@ -43,6 +45,8 @@ class MainActivity : ComponentActivity() {
 
     private val app by lazy { application as CallBridgeApplication }
     val callManager: CallManager by lazy { app.callManager }
+    val contactsRepository: ContactsRepository by lazy { app.contactsRepository }
+    val callHistoryRepository: CallHistoryRepository by lazy { app.callHistoryRepository }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,6 +54,8 @@ class MainActivity : ComponentActivity() {
             CallBridgeTheme {
                 MainApp(
                     callManager = callManager,
+                    contactsRepository = contactsRepository,
+                    callHistoryRepository = callHistoryRepository,
                     onCheckAudioPermission = { onGranted ->
                         checkAndRequestAudioPermission(onGranted)
                     }
@@ -89,6 +95,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainApp(
     callManager: CallManager,
+    contactsRepository: ContactsRepository,
+    callHistoryRepository: CallHistoryRepository,
     onCheckAudioPermission: (() -> Unit) -> Unit,
     navController: NavHostController = rememberNavController()
 ) {
@@ -134,6 +142,7 @@ fun MainApp(
             // Dashboard
             composable(Screen.Dashboard.route) {
                 DashboardScreen(
+                    callHistoryRepository = callHistoryRepository,
                     onNavigateToDialPad = {
                         navController.navigate(Screen.DialPad.createRoute())
                     },
@@ -145,6 +154,18 @@ fun MainApp(
                     },
                     onNavigateToSettings = {
                         navController.navigate(Screen.Settings.route)
+                    },
+                    onCallNumber = { number ->
+                        onCheckAudioPermission {
+                            navController.navigate(Screen.ActiveCall.createRoute(number))
+                            val activity = navController.context as? ComponentActivity
+                            activity?.lifecycleScope?.let { scope ->
+                                callManager.initiateCall(number, "", scope)
+                            }
+                        }
+                    },
+                    onNavigateToCallDetail = { callId ->
+                        navController.navigate(Screen.CallDetail.createRoute(callId))
                     }
                 )
             }
@@ -166,7 +187,6 @@ fun MainApp(
                     onStartCall = { destination ->
                         onCheckAudioPermission {
                             navController.navigate(Screen.ActiveCall.createRoute(destination))
-                            // Start call
                             val activity = navController.context as? ComponentActivity
                             activity?.lifecycleScope?.let { scope ->
                                 callManager.initiateCall(destination, "", scope)
@@ -208,6 +228,7 @@ fun MainApp(
             // Contacts
             composable(Screen.Contacts.route) {
                 ContactsScreen(
+                    contactsRepository = contactsRepository,
                     onNavigateToAddContact = {
                         navController.navigate(Screen.AddEditContact.createRoute())
                     },
@@ -234,6 +255,7 @@ fun MainApp(
                 val contactId = backStackEntry.arguments?.getString("contactId") ?: ""
                 ContactDetailScreen(
                     contactId = contactId,
+                    contactsRepository = contactsRepository,
                     onNavigateBack = { navController.popBackStack() },
                     onEditContact = { id ->
                         navController.navigate(Screen.AddEditContact.createRoute(id))
@@ -263,6 +285,7 @@ fun MainApp(
                 val contactId = backStackEntry.arguments?.getString("contactId") ?: ""
                 AddEditContactScreen(
                     contactId = contactId,
+                    contactsRepository = contactsRepository,
                     onNavigateBack = { navController.popBackStack() },
                     onSaveSuccess = { navController.popBackStack() }
                 )
@@ -271,6 +294,7 @@ fun MainApp(
             // Call History
             composable(Screen.History.route) {
                 CallHistoryScreen(
+                    callHistoryRepository = callHistoryRepository,
                     onNavigateToDetail = { callId ->
                         navController.navigate(Screen.CallDetail.createRoute(callId))
                     },
@@ -294,6 +318,7 @@ fun MainApp(
                 val callId = backStackEntry.arguments?.getString("callId") ?: ""
                 CallDetailScreen(
                     callId = callId,
+                    callHistoryRepository = callHistoryRepository,
                     onNavigateBack = { navController.popBackStack() },
                     onCallNumber = { number ->
                         onCheckAudioPermission {

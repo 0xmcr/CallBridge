@@ -1,5 +1,6 @@
 package com.callbridge.personal.ui.contacts
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
@@ -30,10 +32,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,36 +45,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.callbridge.personal.data.local.entity.ContactEntity
+import com.callbridge.personal.data.repository.ContactsRepository
 import com.callbridge.personal.ui.theme.CallGreen
-
-data class ContactPlaceholder(
-    val id: String,
-    val name: String,
-    val company: String,
-    val phone: String
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactsScreen(
+    contactsRepository: ContactsRepository,
     onNavigateToAddContact: () -> Unit,
     onNavigateToContactDetail: (String) -> Unit,
     onCallNumber: (String) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
 
-    // Sample placeholder data for M1 preview
-    val sampleContacts = listOf(
-        ContactPlaceholder("1", "John Miller", "Acme Logistics", "+1 (202) 555-0143"),
-        ContactPlaceholder("2", "Sarah Jenkins", "BlueStar Media", "+1 (415) 555-0189"),
-        ContactPlaceholder("3", "David Chen", "Global Trade Corp", "+1 (212) 555-0177")
-    )
-
-    val filteredContacts = sampleContacts.filter {
-        it.name.contains(searchQuery, ignoreCase = true) ||
-        it.company.contains(searchQuery, ignoreCase = true) ||
-        it.phone.contains(searchQuery)
-    }
+    val contacts by remember(searchQuery) {
+        if (searchQuery.isBlank()) {
+            contactsRepository.allContacts
+        } else {
+            contactsRepository.searchContacts(searchQuery)
+        }
+    }.collectAsState(initial = emptyList())
 
     Scaffold(
         topBar = {
@@ -105,32 +98,61 @@ fun ContactsScreen(
                 leadingIcon = {
                     Icon(Icons.Filled.Search, contentDescription = "Search")
                 },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Filled.Clear, contentDescription = "Clear search")
+                        }
+                    }
+                },
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (filteredContacts.isEmpty()) {
+            if (contacts.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "No contacts found",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterVertically,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Person,
+                            contentDescription = null,
+                            modifier = Modifier.size(56.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = if (searchQuery.isBlank()) "No contacts yet" else "No matching contacts",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (searchQuery.isBlank()) "Tap + button to add a new contact" else "Try searching with a different name or number",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
                 }
             } else {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(filteredContacts) { contact ->
+                    items(
+                        items = contacts,
+                        key = { it.id }
+                    ) { contact ->
                         ContactItemCard(
                             contact = contact,
                             onClick = { onNavigateToContactDetail(contact.id) },
-                            onCallClick = { onCallNumber(contact.phone) }
+                            onCallClick = { onCallNumber(contact.phoneE164) }
                         )
                     }
                 }
@@ -141,19 +163,18 @@ fun ContactsScreen(
 
 @Composable
 private fun ContactItemCard(
-    contact: ContactPlaceholder,
+    contact: ContactEntity,
     onClick: () -> Unit,
     onCallClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        )
     ) {
         Row(
             modifier = Modifier
@@ -161,33 +182,34 @@ private fun ContactItemCard(
                 .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Initial circle avatar
-            Surface(
+            // Avatar with Initial
+            val initial = contact.displayName.firstOrNull()?.uppercaseChar()?.toString() ?: "#"
+            Box(
                 modifier = Modifier
                     .size(44.dp)
-                    .clip(CircleShape),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = contact.name.take(1).uppercase(),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
+                Text(
+                    text = initial,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             }
 
             Spacer(modifier = Modifier.width(14.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
                 Text(
-                    text = contact.name,
+                    text = contact.displayName,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
-                if (contact.company.isNotEmpty()) {
+                if (!contact.company.isNullOrBlank()) {
                     Text(
                         text = contact.company,
                         style = MaterialTheme.typography.bodySmall,
@@ -195,17 +217,25 @@ private fun ContactItemCard(
                     )
                 }
                 Text(
-                    text = contact.phone,
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = contact.phoneE164,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            IconButton(onClick = onCallClick) {
+            // Quick Call Button
+            IconButton(
+                onClick = onCallClick,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(CallGreen.copy(alpha = 0.12f))
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Call,
-                    contentDescription = "Call ${contact.name}",
-                    tint = CallGreen
+                    contentDescription = "Call ${contact.displayName}",
+                    tint = CallGreen,
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }
