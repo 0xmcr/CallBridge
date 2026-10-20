@@ -40,6 +40,7 @@ import com.callbridge.personal.ui.history.CallDetailScreen
 import com.callbridge.personal.ui.history.CallHistoryScreen
 import com.callbridge.personal.ui.settings.SettingsScreen
 import com.callbridge.personal.ui.theme.CallBridgeTheme
+import com.callbridge.personal.ui.theme.ThemeManager
 
 class MainActivity : ComponentActivity() {
 
@@ -47,15 +48,18 @@ class MainActivity : ComponentActivity() {
     val callManager: CallManager by lazy { app.callManager }
     val contactsRepository: ContactsRepository by lazy { app.contactsRepository }
     val callHistoryRepository: CallHistoryRepository by lazy { app.callHistoryRepository }
+    val themeManager: ThemeManager by lazy { app.themeManager }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            CallBridgeTheme {
+            val themeMode by themeManager.themeMode.collectAsState()
+            CallBridgeTheme(themeMode = themeMode) {
                 MainApp(
                     callManager = callManager,
                     contactsRepository = contactsRepository,
                     callHistoryRepository = callHistoryRepository,
+                    themeManager = themeManager,
                     onCheckAudioPermission = { onGranted ->
                         checkAndRequestAudioPermission(onGranted)
                     }
@@ -97,6 +101,7 @@ fun MainApp(
     callManager: CallManager,
     contactsRepository: ContactsRepository,
     callHistoryRepository: CallHistoryRepository,
+    themeManager: ThemeManager,
     onCheckAudioPermission: (() -> Unit) -> Unit,
     navController: NavHostController = rememberNavController()
 ) {
@@ -106,6 +111,7 @@ fun MainApp(
     val callState by callManager.callState.collectAsState()
     val isMuted by callManager.isMuted.collectAsState()
     val isSpeakerOn by callManager.isSpeakerOn.collectAsState()
+    val isDialSoundEnabled by themeManager.dialSoundEnabled.collectAsState()
 
     // Show BottomBar only on primary top-level tabs when not in an active call
     val isBottomBarVisible = currentRoute in listOf(
@@ -183,6 +189,7 @@ fun MainApp(
                 val initialNumber = backStackEntry.arguments?.getString("initialNumber") ?: ""
                 DialPadScreen(
                     initialNumber = initialNumber,
+                    dialSoundEnabled = isDialSoundEnabled,
                     onNavigateBack = { navController.popBackStack() },
                     onStartCall = { destination ->
                         onCheckAudioPermission {
@@ -334,7 +341,7 @@ fun MainApp(
 
             // Settings
             composable(Screen.Settings.route) {
-                SettingsScreen()
+                SettingsScreen(themeManager = themeManager)
             }
         }
     }
