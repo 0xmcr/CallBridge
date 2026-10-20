@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Bridge Arc -->
+    <path
+        android:strokeWidth="3.5"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:pathData="M38,36 C45,28 63,28 70,36" />
+
+    <path
+        android:strokeWidth="2.5"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:pathData="M34,31 C44,21 64,21 74,31" />
+
+    <!-- Phone Handset Receiver -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M43.5,45 C41.5,45 39.5,46 38.5,48 L35.5,53 C34.5,55 35,57.5 36.5,59 C41,63.5 48.5,71 53,75.5 C54.5,77 57,77.5 59,76.5 L64,73.5 C66,72.5 67,70.5 67,68.5 L65.5,63 C65,61 63,59.5 61,59.5 L57.5,60.5 C55.5,58.5 53.5,56.5 51.5,54.5 L52.5,51 C52.5,49 51,47 49,46.5 L43.5,45 Z" />
+
+</vector>
