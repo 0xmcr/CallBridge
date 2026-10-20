@@ -4,7 +4,88 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+data class PhoneValidation(
+    val isValid: Boolean,
+    val formatted: String,
+    val e164: String,
+    val message: String
+)
+
 object FormatUtils {
+
+    /**
+     * Extracts national digits (up to 10 digits) from a raw input string,
+     * ignoring "+1", parentheses, spaces, and dashes.
+     */
+    fun extractNationalDigits(input: String): String {
+        var cleaned = input.trim().replace("[^0-9]".toRegex(), "")
+        // If it starts with country code 1, strip it to get the national number
+        if (cleaned.startsWith("1") && cleaned.length > 10) {
+            cleaned = cleaned.substring(1)
+        } else if (cleaned.startsWith("1") && cleaned.length == 1) {
+            cleaned = ""
+        }
+        return cleaned.take(10)
+    }
+
+    /**
+     * Formats national digits into clean North American standard phone representation:
+     * e.g. "+1 (202) 555-0143"
+     */
+    fun formatNanpDisplay(digits: String): String {
+        val clean = digits.take(10)
+        return when {
+            clean.isEmpty() -> "+1"
+            clean.length <= 3 -> "+1 ($clean"
+            clean.length <= 6 -> "+1 (${clean.substring(0, 3)}) ${clean.substring(3)}"
+            else -> "+1 (${clean.substring(0, 3)}) ${clean.substring(3, 6)}-${clean.substring(6)}"
+        }
+    }
+
+    /**
+     * Validates whether national digits form a legitimate North American Numbering Plan number.
+     * US numbers require 10 digits where:
+     * - Area code (digits 0-2) cannot start with 0 or 1
+     * - Central office code (digits 3-5) cannot start with 0 or 1
+     */
+    fun validateNanp(digits: String): PhoneValidation {
+        val clean = digits.take(10)
+        val formatted = formatNanpDisplay(clean)
+        val e164 = if (clean.length == 10) "+1$clean" else ""
+
+        return when {
+            clean.isEmpty() -> PhoneValidation(
+                isValid = false,
+                formatted = formatted,
+                e164 = "",
+                message = "Enter 10-digit US phone number"
+            )
+            clean.length < 10 -> PhoneValidation(
+                isValid = false,
+                formatted = formatted,
+                e164 = "",
+                message = "Need ${10 - clean.length} more digits"
+            )
+            clean[0] in listOf('0', '1') -> PhoneValidation(
+                isValid = false,
+                formatted = formatted,
+                e164 = "",
+                message = "Area code cannot start with 0 or 1"
+            )
+            clean[3] in listOf('0', '1') -> PhoneValidation(
+                isValid = false,
+                formatted = formatted,
+                e164 = "",
+                message = "Exchange code cannot start with 0 or 1"
+            )
+            else -> PhoneValidation(
+                isValid = true,
+                formatted = formatted,
+                e164 = e164,
+                message = "Valid US Number"
+            )
+        }
+    }
 
     /**
      * Normalizes a user-input phone number to E.164 US format (+1XXXXXXXXXX).
