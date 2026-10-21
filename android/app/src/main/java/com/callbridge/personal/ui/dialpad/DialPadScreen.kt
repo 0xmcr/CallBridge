@@ -240,11 +240,7 @@ fun DialPadScreen(
                     modifier = Modifier.size(68.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    AnimatedVisibility(
-                        visible = nationalDigits.isNotEmpty(),
-                        enter = fadeIn(),
-                        exit = fadeOut()
-                    ) {
+                    if (nationalDigits.isNotEmpty()) {
                         BackspaceKey(
                             onDelete = {
                                 if (nationalDigits.isNotEmpty()) {

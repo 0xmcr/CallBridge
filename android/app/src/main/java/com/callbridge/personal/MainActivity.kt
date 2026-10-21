@@ -16,6 +16,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
@@ -71,7 +73,7 @@ class MainActivity : ComponentActivity() {
                         onDismissRequest = { showFirstTimePermissionDialog = false },
                         icon = {
                             androidx.compose.material3.Icon(
-                                imageVector = androidx.compose.material.icons.Icons.Filled.Phone,
+                                imageVector = androidx.compose.material.icons.Icons.Filled.Call,
                                 contentDescription = null,
                                 tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(36.dp)
