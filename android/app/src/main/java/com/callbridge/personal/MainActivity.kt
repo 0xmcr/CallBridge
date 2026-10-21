@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -178,21 +179,27 @@ fun MainApp(
         Screen.Settings.route
     ) && (callState is CallUiState.Idle || callState is CallUiState.Ended || callState is CallUiState.Failed)
 
+    // Unified, glitch-free top-level tab switcher
+    val navigateToTab: (String) -> Unit = { targetRoute ->
+        if (currentRoute != targetRoute) {
+            navController.navigate(targetRoute) {
+                popUpTo(navController.graph.findStartDestination().id) {
+                    inclusive = false
+                    saveState = false
+                }
+                launchSingleTop = true
+                restoreState = false
+            }
+        }
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             if (isBottomBarVisible) {
                 CallBridgeBottomBar(
                     currentRoute = currentRoute,
-                    onNavigateToRoute = { route ->
-                        navController.navigate(route) {
-                            popUpTo(Screen.Dashboard.route) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
+                    onNavigateToRoute = navigateToTab
                 )
             }
         }
@@ -210,13 +217,13 @@ fun MainApp(
                         navController.navigate(Screen.DialPad.createRoute())
                     },
                     onNavigateToContacts = {
-                        navController.navigate(Screen.Contacts.route)
+                        navigateToTab(Screen.Contacts.route)
                     },
                     onNavigateToHistory = {
-                        navController.navigate(Screen.History.route)
+                        navigateToTab(Screen.History.route)
                     },
                     onNavigateToSettings = {
-                        navController.navigate(Screen.Settings.route)
+                        navigateToTab(Screen.Settings.route)
                     },
                     onCallNumber = { number ->
                         onCheckAudioPermission {
