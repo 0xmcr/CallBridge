@@ -1,20 +1,23 @@
 package com.callbridge.personal.ui.components
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.Call
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Contacts
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.callbridge.personal.navigation.Screen
 
@@ -29,8 +32,8 @@ val BottomNavigationItems = listOf(
     NavigationItem(
         route = Screen.Dashboard.route,
         label = "Dashboard",
-        selectedIcon = Icons.Filled.Call,
-        unselectedIcon = Icons.Outlined.Call
+        selectedIcon = Icons.Filled.Home,
+        unselectedIcon = Icons.Outlined.Home
     ),
     NavigationItem(
         route = Screen.Contacts.route,
@@ -57,26 +60,34 @@ fun CallBridgeBottomBar(
     currentRoute: String?,
     onNavigateToRoute: (String) -> Unit
 ) {
-    androidx.compose.material3.NavigationBar(
-        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
+    NavigationBar(
+        containerColor = MaterialTheme.colorScheme.surface,
         tonalElevation = 8.dp
     ) {
         BottomNavigationItems.forEach { item ->
             val isSelected = currentRoute == item.route
             NavigationBarItem(
                 selected = isSelected,
-                onClick = {
-                    if (!isSelected) {
-                        onNavigateToRoute(item.route)
-                    }
-                },
+                onClick = { onNavigateToRoute(item.route) },
                 icon = {
                     Icon(
                         imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
                         contentDescription = item.label
                     )
                 },
-                label = { Text(text = item.label) }
+                label = {
+                    Text(
+                        text = item.label,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                    )
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             )
         }
     }
