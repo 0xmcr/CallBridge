@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +26,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
@@ -64,14 +67,32 @@ fun DialPadScreen(
     onStartCall: (String) -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
+    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
 
     // Internal state stores only the 10 national digits (e.g. "2025550143")
     var nationalDigits by remember {
         mutableStateOf(FormatUtils.extractNationalDigits(initialNumber))
     }
 
+    var clipboardDigits by remember { mutableStateOf<String?>(null) }
+
+    // Check clipboard for auto-detecting US phone numbers
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        val clipText = clipboardManager.getText()?.text
+        if (!clipText.isNullOrBlank()) {
+            val extracted = FormatUtils.extractNationalDigits(clipText)
+            if (extracted.length >= 7) {
+                clipboardDigits = extracted
+            }
+        }
+    }
+
     val validation = remember(nationalDigits) {
         FormatUtils.validateNanp(nationalDigits)
+    }
+
+    val locationHint = remember(nationalDigits) {
+        FormatUtils.getAreaCodeLocation(nationalDigits)
     }
 
     Scaffold(
@@ -154,6 +175,67 @@ fun DialPadScreen(
                                 else -> MaterialTheme.colorScheme.onSurfaceVariant
                             }
                         )
+                    }
+                }
+
+                // Live US City & State Location Hint
+                if (!locationHint.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.LocationOn,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = locationHint,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+
+                // Smart Clipboard Paste Pill
+                if (nationalDigits.isEmpty() && !clipboardDigits.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Surface(
+                        modifier = Modifier.clip(RoundedCornerShape(16.dp)).clickable {
+                            nationalDigits = clipboardDigits!!
+                            clipboardDigits = null
+                            if (dialSoundEnabled) DtmfPlayer.playTone('1')
+                        },
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.ContentPaste,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Paste ${FormatUtils.formatNanpDisplay(clipboardDigits!!)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
                     }
                 }
             }

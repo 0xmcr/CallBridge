@@ -22,16 +22,15 @@ class CallBridgeApplication : Application() {
         CallHistoryRepository(database.callHistoryDao())
     }
 
-    val voiceApiService: VoiceApiService by lazy {
-        ApiClient.createVoiceApiService()
+    val themeManager: com.callbridge.personal.ui.theme.ThemeManager by lazy {
+        com.callbridge.personal.ui.theme.ThemeManager(this)
     }
+
+    val voiceApiService: VoiceApiService
+        get() = ApiClient.createVoiceApiService(themeManager.backendUrl.value)
 
     val callManager: CallManager by lazy {
         CallManager(this, voiceApiService, callHistoryRepository)
-    }
-
-    val themeManager: com.callbridge.personal.ui.theme.ThemeManager by lazy {
-        com.callbridge.personal.ui.theme.ThemeManager(this)
     }
 
     override fun onCreate() {

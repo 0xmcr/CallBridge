@@ -35,6 +35,12 @@ class CallManager(
     private val _isSpeakerOn = MutableStateFlow(false)
     val isSpeakerOn: StateFlow<Boolean> = _isSpeakerOn.asStateFlow()
 
+    private val _isHeld = MutableStateFlow(false)
+    val isHeld: StateFlow<Boolean> = _isHeld.asStateFlow()
+
+    private val _activeCallNote = MutableStateFlow("")
+    val activeCallNote: StateFlow<String> = _activeCallNote.asStateFlow()
+
     private var activeCall: Call? = null
     private var activeCallRecordId: String? = null
     private var callStartedAt: Long? = null
@@ -111,6 +117,8 @@ class CallManager(
         activeCallRecordId = UUID.randomUUID().toString()
         _isMuted.value = false
         _isSpeakerOn.value = false
+        _isHeld.value = false
+        _activeCallNote.value = ""
         audioDeviceManager.setSpeakerphoneOn(false)
 
         _callState.value = CallUiState.FetchingToken
@@ -185,6 +193,23 @@ class CallManager(
         _isSpeakerOn.value = newSpeaker
     }
 
+    fun toggleHold() {
+        val newHold = !_isHeld.value
+        _isHeld.value = newHold
+        activeCall?.hold(newHold)
+    }
+
+    fun sendDigits(digits: String) {
+        if (digits.isNotBlank()) {
+            activeCall?.sendDigits(digits)
+            Log.d(tag, "Sent in-call DTMF digits: $digits")
+        }
+    }
+
+    fun setCallNote(note: String) {
+        _activeCallNote.value = note
+    }
+
     fun endCall() {
         _callState.value = CallUiState.Ending
         simulationJob?.cancel()
@@ -220,6 +245,7 @@ class CallManager(
             durationSeconds = duration,
             providerCallSid = activeCall?.sid,
             errorCode = errorCode,
+            note = _activeCallNote.value.trim().ifEmpty { null },
             createdAt = endedAt
         )
 
@@ -233,6 +259,8 @@ class CallManager(
 
         activeCall = null
         audioDeviceManager.setSpeakerphoneOn(false)
+        _isHeld.value = false
+        _activeCallNote.value = ""
 
         if (status == "FAILED") {
             _callState.value = CallUiState.Failed(

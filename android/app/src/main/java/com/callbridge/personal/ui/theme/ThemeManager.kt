@@ -25,6 +25,9 @@ class ThemeManager(context: Context) {
     private val _callerId = MutableStateFlow(loadCallerId())
     val callerId: StateFlow<String> = _callerId.asStateFlow()
 
+    private val _backendUrl = MutableStateFlow(loadBackendUrl())
+    val backendUrl: StateFlow<String> = _backendUrl.asStateFlow()
+
     private fun loadThemeMode(): AppThemeMode {
         val saved = prefs.getString("app_theme_mode", AppThemeMode.DARK.name)
         return try {
@@ -56,5 +59,15 @@ class ThemeManager(context: Context) {
         val clean = number.trim()
         prefs.edit().putString("user_caller_id", clean).apply()
         _callerId.value = clean
+    }
+
+    private fun loadBackendUrl(): String {
+        return prefs.getString("backend_url", "http://10.0.2.2:3000/") ?: "http://10.0.2.2:3000/"
+    }
+
+    fun setBackendUrl(url: String) {
+        val clean = if (url.trim().endsWith("/")) url.trim() else "${url.trim()}/"
+        prefs.edit().putString("backend_url", clean).apply()
+        _backendUrl.value = clean
     }
 }

@@ -20,6 +20,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.NetworkCheck
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
@@ -44,6 +48,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -66,9 +71,58 @@ fun SettingsScreen(themeManager: ThemeManager) {
     val currentThemeMode by themeManager.themeMode.collectAsState()
     val isDialSoundEnabled by themeManager.dialSoundEnabled.collectAsState()
     val currentCallerId by themeManager.callerId.collectAsState()
+    val currentBackendUrl by themeManager.backendUrl.collectAsState()
 
     var showEditCallerIdDialog by remember { mutableStateOf(false) }
     var editedNumber by remember(currentCallerId) { mutableStateOf(currentCallerId) }
+
+    var showEditBackendUrlDialog by remember { mutableStateOf(false) }
+    var editedBackendUrl by remember(currentBackendUrl) { mutableStateOf(currentBackendUrl) }
+    var pingResult by remember { mutableStateOf<String?>(null) }
+    var isPinging by remember { mutableStateOf(false) }
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+
+    if (showEditBackendUrlDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditBackendUrlDialog = false },
+            title = { Text("Update Backend Bridge URL") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Enter your public cloud server URL (e.g. Railway/Render HTTPS) or local WiFi IP:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = editedBackendUrl,
+                        onValueChange = { editedBackendUrl = it },
+                        singleLine = true,
+                        placeholder = { Text("https://my-backend.railway.app") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (editedBackendUrl.isNotBlank()) {
+                            themeManager.setBackendUrl(editedBackendUrl)
+                            pingResult = null
+                        }
+                        showEditBackendUrlDialog = false
+                    }
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditBackendUrlDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     if (showEditCallerIdDialog) {
         AlertDialog(
@@ -206,6 +260,148 @@ fun SettingsScreen(themeManager: ThemeManager) {
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+            }
+
+            // ==========================================
+            // Backend Server & Gateway URL Card
+            // ==========================================
+            Text(
+                text = "VoIP Backend Gateway",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(18.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Filled.Dns,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Bridge Server Endpoint",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        IconButton(
+                            onClick = {
+                                editedBackendUrl = currentBackendUrl
+                                showEditBackendUrlDialog = true
+                            },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Edit,
+                                contentDescription = "Edit Server URL",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = currentBackendUrl,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Ping Status Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (pingResult != null) {
+                            val isSuccess = pingResult!!.contains("200") || pingResult!!.contains("Online")
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f, fill = false)) {
+                                Icon(
+                                    imageVector = if (isSuccess) Icons.Filled.CheckCircle else Icons.Filled.Warning,
+                                    contentDescription = null,
+                                    tint = if (isSuccess) CallGreen else MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = pingResult!!,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (isSuccess) CallGreen else MaterialTheme.colorScheme.error
+                                )
+                            }
+                        } else {
+                            Text(
+                                text = "Verify reachability and latency",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        TextButton(
+                            onClick = {
+                                isPinging = true
+                                pingResult = "Pinging..."
+                                coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                    val start = System.currentTimeMillis()
+                                    try {
+                                        val url = java.net.URL("${currentBackendUrl}api/v1/health")
+                                        val conn = url.openConnection() as java.net.HttpURLConnection
+                                        conn.connectTimeout = 4000
+                                        conn.readTimeout = 4000
+                                        conn.requestMethod = "GET"
+                                        val code = conn.responseCode
+                                        val latency = System.currentTimeMillis() - start
+                                        conn.disconnect()
+                                        pingResult = if (code == 200) "Online (200 OK • ${latency}ms)" else "HTTP $code (${latency}ms)"
+                                    } catch (e: Exception) {
+                                        pingResult = "Unreachable"
+                                    } finally {
+                                        isPinging = false
+                                    }
+                                }
+                            },
+                            enabled = !isPinging
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Filled.NetworkCheck,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(if (isPinging) "Testing..." else "Test Connection")
+                            }
+                        }
+                    }
                 }
             }
 

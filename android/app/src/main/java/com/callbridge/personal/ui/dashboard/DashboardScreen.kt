@@ -46,11 +46,13 @@ import androidx.compose.ui.unit.dp
 import com.callbridge.personal.data.repository.CallHistoryRepository
 import com.callbridge.personal.ui.history.CallHistoryItemCard
 import com.callbridge.personal.ui.theme.CallGreen
+import com.callbridge.personal.ui.theme.ThemeManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     callHistoryRepository: CallHistoryRepository,
+    themeManager: ThemeManager,
     onNavigateToDialPad: () -> Unit,
     onNavigateToContacts: () -> Unit,
     onNavigateToHistory: () -> Unit,
@@ -122,6 +124,71 @@ fun DashboardScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            item {
+                Spacer(modifier = Modifier.height(2.dp))
+                // Active Outbound Caller ID Banner
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToSettings() },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(CallGreen)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Active USA Caller ID",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = CallGreen
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            val callerId by themeManager.callerId.collectAsState()
+                            Text(
+                                text = "🇺🇸 $callerId",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "VoIP Telecom Gateway • BD ➔ US",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        Icon(
+                            imageVector = Icons.Filled.Call,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                }
+            }
+
             item {
                 Spacer(modifier = Modifier.height(4.dp))
                 // Quick Action Cards

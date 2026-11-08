@@ -169,6 +169,8 @@ fun MainApp(
     val callState by callManager.callState.collectAsState()
     val isMuted by callManager.isMuted.collectAsState()
     val isSpeakerOn by callManager.isSpeakerOn.collectAsState()
+    val isHeld by callManager.isHeld.collectAsState()
+    val activeCallNote by callManager.activeCallNote.collectAsState()
     val isDialSoundEnabled by themeManager.dialSoundEnabled.collectAsState()
 
     // Show BottomBar only on primary top-level tabs when not in an active call
@@ -213,6 +215,7 @@ fun MainApp(
             composable(Screen.Dashboard.route) {
                 DashboardScreen(
                     callHistoryRepository = callHistoryRepository,
+                    themeManager = themeManager,
                     onNavigateToDialPad = {
                         navController.navigate(Screen.DialPad.createRoute())
                     },
@@ -286,8 +289,13 @@ fun MainApp(
                     callState = callState,
                     isMuted = isMuted,
                     isSpeakerOn = isSpeakerOn,
+                    isHeld = isHeld,
+                    activeCallNote = activeCallNote,
                     onToggleMute = { callManager.toggleMute() },
                     onToggleSpeaker = { callManager.toggleSpeaker() },
+                    onToggleHold = { callManager.toggleHold() },
+                    onSendDtmfDigit = { digit -> callManager.sendDigits(digit) },
+                    onUpdateNote = { note -> callManager.setCallNote(note) },
                     onEndCall = {
                         callManager.endCall()
                         callManager.resetStateToIdle()

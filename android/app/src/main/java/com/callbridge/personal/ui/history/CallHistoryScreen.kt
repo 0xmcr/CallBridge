@@ -218,6 +218,23 @@ fun CallHistoryItemCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
+                val loc = FormatUtils.getAreaCodeLocation(item.destinationE164)
+                if (!loc.isNullOrBlank()) {
+                    Text(
+                        text = "📍 $loc",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+                if (!item.note.isNullOrBlank()) {
+                    Text(
+                        text = "📝 ${item.note}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.tertiary,
+                        maxLines = 1
+                    )
+                }
                 Spacer(modifier = Modifier.height(2.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

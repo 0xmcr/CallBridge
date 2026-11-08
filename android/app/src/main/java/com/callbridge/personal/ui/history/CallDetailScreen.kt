@@ -163,6 +163,19 @@ fun CallDetailScreen(
                             label = "Duration",
                             value = FormatUtils.formatDuration(record.durationSeconds)
                         )
+                        val locHint = FormatUtils.getAreaCodeLocation(record.destinationE164)
+                        if (!locHint.isNullOrBlank()) {
+                            DetailRow(
+                                label = "US Location",
+                                value = "📍 $locHint"
+                            )
+                        }
+                        if (!record.note.isNullOrBlank()) {
+                            DetailRow(
+                                label = "In-Call Note",
+                                value = "📝 ${record.note}"
+                            )
+                        }
                         DetailRow(
                             label = "Date & Time",
                             value = FormatUtils.formatTimestamp(record.startedAt ?: record.createdAt)
