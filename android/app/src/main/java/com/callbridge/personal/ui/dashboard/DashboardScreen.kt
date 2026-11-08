@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Dialpad
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
@@ -63,6 +64,7 @@ fun DashboardScreen(
     onNavigateToDialPad: () -> Unit,
     onNavigateToContacts: () -> Unit,
     onNavigateToHistory: () -> Unit,
+    onNavigateToMessages: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onCallNumber: (String) -> Unit,
     onNavigateToCallDetail: (String) -> Unit
@@ -279,7 +281,7 @@ fun DashboardScreen(
                     Card(
                         modifier = Modifier
                             .weight(1f)
-                            .clickable { onNavigateToContacts() },
+                            .clickable { onNavigateToMessages() },
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.primaryContainer
                         ),
@@ -294,19 +296,19 @@ fun DashboardScreen(
                             horizontalAlignment = Alignment.Start
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.Contacts,
-                                contentDescription = "Contacts",
+                                imageVector = Icons.Filled.Email,
+                                contentDescription = "SMS Messages",
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "Contacts",
+                                text = "SMS Hub",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = "Personal CRM",
+                                text = "Twilio 2-Way Chat",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                             )
@@ -316,7 +318,7 @@ fun DashboardScreen(
                     Card(
                         modifier = Modifier
                             .weight(1f)
-                            .clickable { onNavigateToHistory() },
+                            .clickable { onNavigateToContacts() },
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.secondaryContainer
                         ),
@@ -331,19 +333,19 @@ fun DashboardScreen(
                             horizontalAlignment = Alignment.Start
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.History,
-                                contentDescription = "History",
+                                imageVector = Icons.Filled.Contacts,
+                                contentDescription = "Contacts",
                                 tint = MaterialTheme.colorScheme.onSecondaryContainer
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "Recent Logs",
+                                text = "Contacts",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = "Call activity",
+                                text = "Personal CRM",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                             )
