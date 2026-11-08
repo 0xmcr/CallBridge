@@ -436,16 +436,18 @@ fun ActiveCallScreen(
             }
 
             // ==========================================
-            // Comprehensive 6-Button In-Call Grid
+            // Clean 4-Button In-Call Controls
             // ==========================================
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(24.dp),
-                modifier = Modifier.padding(bottom = 16.dp)
+                verticalArrangement = Arrangement.spacedBy(32.dp),
+                modifier = Modifier.padding(bottom = 24.dp)
             ) {
-                // Controls Row 1: Mute | Keypad | Speaker
+                // Balanced Row: Mute | Keypad | Speaker | Notes
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     // 1. Mute Button
@@ -474,23 +476,8 @@ fun ActiveCallScreen(
                         enabled = isCallActive || callState is CallUiState.Ringing,
                         onClick = onToggleSpeaker
                     )
-                }
 
-                // Controls Row 2: Hold | Quick Notes | Bluetooth/Audio
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    // 4. Hold Call
-                    CallControlButton(
-                        icon = if (isHeld) Icons.Filled.PlayArrow else Icons.Filled.Pause,
-                        label = if (isHeld) "Unhold" else "Hold",
-                        isActive = isHeld,
-                        enabled = isCallActive,
-                        onClick = onToggleHold
-                    )
-
-                    // 5. In-Call Scratchpad / Note
+                    // 4. In-Call Quick Note
                     CallControlButton(
                         icon = Icons.Filled.EditNote,
                         label = if (noteText.isNotEmpty()) "Notes (1)" else "Notes",
@@ -498,18 +485,7 @@ fun ActiveCallScreen(
                         enabled = isCallActive,
                         onClick = { showNotesSheet = true }
                     )
-
-                    // 6. Bluetooth / Headset Status
-                    CallControlButton(
-                        icon = Icons.Filled.Bluetooth,
-                        label = "Audio",
-                        isActive = false,
-                        enabled = true,
-                        onClick = onToggleSpeaker
-                    )
                 }
-
-                Spacer(modifier = Modifier.height(8.dp))
 
                 // Big Red End Call Floating Button
                 FloatingActionButton(
