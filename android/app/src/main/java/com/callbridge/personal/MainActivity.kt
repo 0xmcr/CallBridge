@@ -183,13 +183,13 @@ fun MainApp(
     val isDialSoundEnabled by themeManager.dialSoundEnabled.collectAsState()
     val hasCompletedOnboarding by themeManager.hasCompletedOnboarding.collectAsState()
 
-    // Show BottomBar only on primary top-level tabs when not in an active call
+    // Show BottomBar consistently on primary top-level tabs
     val isBottomBarVisible = currentRoute in listOf(
         Screen.Dashboard.route,
         Screen.Contacts.route,
         Screen.History.route,
         Screen.Settings.route
-    ) && (callState is CallUiState.Idle || callState is CallUiState.Ended || callState is CallUiState.Failed)
+    )
 
     // Unified, glitch-free top-level tab switcher
     val navigateToTab: (String) -> Unit = { targetRoute ->
@@ -340,7 +340,12 @@ fun MainApp(
                     onEndCall = {
                         callManager.endCall()
                         callManager.resetStateToIdle()
-                        navController.popBackStack(Screen.Dashboard.route, inclusive = false)
+                        navController.navigate(Screen.Dashboard.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                inclusive = false
+                            }
+                            launchSingleTop = true
+                        }
                     }
                 )
             }

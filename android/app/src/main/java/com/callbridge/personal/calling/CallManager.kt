@@ -11,6 +11,7 @@ import com.twilio.voice.ConnectOptions
 import com.twilio.voice.Voice
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,6 +49,7 @@ class CallManager(
     private var currentDestination: String = ""
     private var currentContactName: String = ""
     private var simulationJob: kotlinx.coroutines.Job? = null
+    private var callJob: kotlinx.coroutines.Job? = null
 
     private val callListener = object : Call.Listener {
         override fun onRinging(call: Call) {
@@ -123,12 +125,19 @@ class CallManager(
 
         _callState.value = CallUiState.FetchingToken
 
-        coroutineScope.launch(Dispatchers.IO) {
+        callJob?.cancel()
+        simulationJob?.cancel()
+
+        callJob = coroutineScope.launch(Dispatchers.IO) {
             try {
+                if (!isActive) return@launch
+
                 // 1. Fetch short-lived token from backend over HTTPS
                 val tokenResponse = voiceApiService.getVoiceToken(
                     mapOf("identity" to "cb_operator")
                 )
+
+                if (!isActive) return@launch
 
                 if (tokenResponse.token.isNotBlank() &&
                     !tokenResponse.token.startsWith("mock_") &&
@@ -148,15 +157,22 @@ class CallManager(
                         .params(params)
                         .build()
 
-                    activeCall = Voice.connect(context, connectOptions, callListener)
+                    if (isActive) {
+                        activeCall = Voice.connect(context, connectOptions, callListener)
+                    }
                 } else {
-                    Log.d(tag, "Using interactive Simulation Mode for demonstration")
-                    startSimulationCall(destination, contactName, coroutineScope)
+                    if (isActive) {
+                        Log.d(tag, "Using interactive Simulation Mode for demonstration")
+                        startSimulationCall(destination, contactName, coroutineScope)
+                    }
                 }
 
             } catch (e: Exception) {
-                Log.w(tag, "Backend token unavailable (${e.message}); launching interactive Simulation Mode")
-                startSimulationCall(destination, contactName, coroutineScope)
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                if (isActive) {
+                    Log.w(tag, "Backend token unavailable (${e.message}); launching interactive Simulation Mode")
+                    startSimulationCall(destination, contactName, coroutineScope)
+                }
             }
         }
     }
@@ -166,11 +182,14 @@ class CallManager(
         contactName: String,
         scope: CoroutineScope
     ) {
+        simulationJob?.cancel()
         _callState.value = CallUiState.Connecting(destination, contactName)
         simulationJob = scope.launch(Dispatchers.Default) {
             kotlinx.coroutines.delay(1200)
+            if (!isActive) return@launch
             _callState.value = CallUiState.Ringing(destination, contactName)
             kotlinx.coroutines.delay(2200)
+            if (!isActive) return@launch
             val now = System.currentTimeMillis()
             callConnectedAt = now
             _callState.value = CallUiState.Connected(
@@ -212,17 +231,23 @@ class CallManager(
 
     fun endCall() {
         _callState.value = CallUiState.Ending
+        callJob?.cancel()
+        callJob = null
         simulationJob?.cancel()
         simulationJob = null
         if (activeCall != null) {
-            activeCall?.disconnect()
-        } else {
-            finalizeCallRecord(
-                status = if (callConnectedAt != null) "COMPLETED" else "CANCELLED",
-                errorCode = null,
-                errorMessage = "Call ended"
-            )
+            try {
+                activeCall?.disconnect()
+            } catch (e: Exception) {
+                // ignore
+            }
+            activeCall = null
         }
+        finalizeCallRecord(
+            status = if (callConnectedAt != null) "COMPLETED" else "CANCELLED",
+            errorCode = null,
+            errorMessage = "Call ended"
+        )
     }
 
     private fun finalizeCallRecord(
@@ -277,6 +302,11 @@ class CallManager(
     }
 
     fun resetStateToIdle() {
+        callJob?.cancel()
+        callJob = null
+        simulationJob?.cancel()
+        simulationJob = null
+        activeCall = null
         _callState.value = CallUiState.Idle
     }
 }
