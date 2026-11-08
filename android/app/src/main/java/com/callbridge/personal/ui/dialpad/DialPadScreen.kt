@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -293,40 +294,41 @@ fun DialPadScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Real-time Validity Indicator Pill
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = when {
-                        validation.isValid -> CallGreen.copy(alpha = 0.15f)
-                        nationalDigits.length == 10 -> StatusWarning.copy(alpha = 0.15f)
-                        else -> MaterialTheme.colorScheme.surfaceVariant
-                    }
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                    ) {
-                        if (validation.isValid) {
-                            Icon(
-                                imageVector = Icons.Filled.CheckCircle,
-                                contentDescription = null,
-                                tint = CallGreen,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
+                // Real-time Validity Indicator Pill (Shown only when typing)
+                if (nationalDigits.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = when {
+                            validation.isValid -> CallGreen.copy(alpha = 0.15f)
+                            nationalDigits.length == 10 -> StatusWarning.copy(alpha = 0.15f)
+                            else -> MaterialTheme.colorScheme.surfaceVariant
                         }
-                        Text(
-                            text = validation.message,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = when {
-                                validation.isValid -> CallGreen
-                                nationalDigits.length == 10 -> StatusWarning
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        ) {
+                            if (validation.isValid) {
+                                Icon(
+                                    imageVector = Icons.Filled.CheckCircle,
+                                    contentDescription = null,
+                                    tint = CallGreen,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
                             }
-                        )
+                            Text(
+                                text = validation.message,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Medium,
+                                color = when {
+                                    validation.isValid -> CallGreen
+                                    nationalDigits.length == 10 -> StatusWarning
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
+                        }
                     }
                 }
 
@@ -396,7 +398,7 @@ fun DialPadScreen(
             // Keypad (4 rows)
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 val keys = listOf(
@@ -442,16 +444,17 @@ fun DialPadScreen(
                 }
             }
 
-            // Bottom Actions Row: Spacer | Call FAB | Backspace Button
+            // Bottom Actions Row: Spacer | Call FAB | Backspace Button (Protected with Navigation Inset)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp, top = 8.dp),
+                    .navigationBarsPadding()
+                    .padding(bottom = 14.dp, top = 4.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Invisible balance box
-                Box(modifier = Modifier.size(68.dp))
+                Box(modifier = Modifier.size(64.dp))
 
                 // Primary Call Button (Glowing Emerald)
                 FloatingActionButton(
@@ -462,7 +465,7 @@ fun DialPadScreen(
                             onStartCall(numberToCall)
                         }
                     },
-                    modifier = Modifier.size(72.dp),
+                    modifier = Modifier.size(68.dp),
                     shape = CircleShape,
                     containerColor = if (validation.isValid) CallGreen else MaterialTheme.colorScheme.surfaceVariant,
                     contentColor = if (validation.isValid) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
@@ -473,13 +476,13 @@ fun DialPadScreen(
                     Icon(
                         imageVector = Icons.Filled.Call,
                         contentDescription = "Place Call",
-                        modifier = Modifier.size(34.dp)
+                        modifier = Modifier.size(32.dp)
                     )
                 }
 
                 // Backspace Button (Quick Tap to Delete, Long Press to Clear All)
                 Box(
-                    modifier = Modifier.size(68.dp),
+                    modifier = Modifier.size(64.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     if (nationalDigits.isNotEmpty()) {
@@ -514,7 +517,7 @@ private fun DialKeyButton(
 ) {
     Surface(
         modifier = Modifier
-            .size(76.dp)
+            .size(70.dp)
             .clip(CircleShape)
             .border(
                 width = 1.dp,

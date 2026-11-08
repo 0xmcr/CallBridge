@@ -756,7 +756,7 @@ fun SettingsScreen(themeManager: ThemeManager) {
                     SettingDetailRow(
                         icon = Icons.Filled.Info,
                         title = "Application Version",
-                        subtitle = "CallBridge Pro 1.0.5 (Build 6)"
+                        subtitle = "CallBridge Pro 1.0.6 (Build 7)"
                     )
                     SettingDetailRow(
                         icon = Icons.Filled.Info,
