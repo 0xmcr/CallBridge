@@ -50,10 +50,10 @@ yarn-error.log*
 .DS_Store
 
 # Internal reports and audit documents
-docs/*_CATALOG.md
-docs/*_REPORT*.md
-docs/CALLBRIDGE_PRODUCTION_ARCHITECTURE_AND_FEATURE_CATALOG.md
-Thumbs.db
+docs/
+/docs/
+*.doc
+*.docx
 *.swp
 *.swo
 *~
