@@ -28,6 +28,18 @@ class ThemeManager(context: Context) {
     private val _backendUrl = MutableStateFlow(loadBackendUrl())
     val backendUrl: StateFlow<String> = _backendUrl.asStateFlow()
 
+    private val _hasCompletedOnboarding = MutableStateFlow(loadHasCompletedOnboarding())
+    val hasCompletedOnboarding: StateFlow<Boolean> = _hasCompletedOnboarding.asStateFlow()
+
+    private fun loadHasCompletedOnboarding(): Boolean {
+        return prefs.getBoolean("has_completed_onboarding", false)
+    }
+
+    fun setHasCompletedOnboarding(completed: Boolean) {
+        prefs.edit().putBoolean("has_completed_onboarding", completed).apply()
+        _hasCompletedOnboarding.value = completed
+    }
+
     private fun loadThemeMode(): AppThemeMode {
         val saved = prefs.getString("app_theme_mode", AppThemeMode.DARK.name)
         return try {
