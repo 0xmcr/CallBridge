@@ -8,6 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -197,6 +198,7 @@ fun MainApp(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (isBottomBarVisible) {
                 CallBridgeBottomBar(
@@ -209,7 +211,9 @@ fun MainApp(
         NavHost(
             navController = navController,
             startDestination = Screen.Dashboard.route,
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = paddingValues.calculateBottomPadding())
         ) {
             // Dashboard
             composable(Screen.Dashboard.route) {

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -63,6 +64,7 @@ fun DashboardScreen(
     val recentCalls by callHistoryRepository.getRecentCalls(5).collectAsState(initial = emptyList())
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 title = {
@@ -370,7 +372,7 @@ fun DashboardScreen(
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(72.dp)) // Space for FAB
+                Spacer(modifier = Modifier.height(16.dp)) // Space above bottom bar
             }
         }
     }
