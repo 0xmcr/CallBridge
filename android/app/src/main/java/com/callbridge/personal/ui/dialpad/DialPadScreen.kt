@@ -228,7 +228,7 @@ fun DialPadScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = if (countryInfo.dialCode == "+1") "USA Direct" else "${countryInfo.name} Direct",
+                                    text = "CallBridge Direct",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = CallGreen

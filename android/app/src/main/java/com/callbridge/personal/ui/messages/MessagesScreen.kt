@@ -217,7 +217,7 @@ fun MessagesScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Twilio SMS Gateway • $callerId",
+                            text = "CallBridge SMS Gateway",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

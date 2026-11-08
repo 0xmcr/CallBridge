@@ -204,9 +204,10 @@ fun ChatThreadScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "CallBridge SMS • ${country.name}",
+                                text = "CallBridge SMS",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                fontWeight = FontWeight.SemiBold,
+                                color = CallBridgeBlue
                             )
                         }
                     }
@@ -258,7 +259,7 @@ fun ChatThreadScreen(
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
             ) {
                 Text(
-                    text = "Encrypted SMS via CallBridge Gateway • Twilio ($callerId)",
+                    text = "Encrypted via CallBridge Telecom Gateway",
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
