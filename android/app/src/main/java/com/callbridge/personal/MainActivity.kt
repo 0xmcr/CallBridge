@@ -368,6 +368,9 @@ fun MainApp(
                                 callManager.initiateCall(number, "", scope)
                             }
                         }
+                    },
+                    onSendMessage = { phone ->
+                        navController.navigate(Screen.ChatThread.createRoute(phone))
                     }
                 )
             }
@@ -393,6 +396,9 @@ fun MainApp(
                                 callManager.initiateCall(number, "", scope)
                             }
                         }
+                    },
+                    onSendMessage = { phone ->
+                        navController.navigate(Screen.ChatThread.createRoute(phone))
                     }
                 )
             }
@@ -453,6 +459,9 @@ fun MainApp(
                                 callManager.initiateCall(number, "", scope)
                             }
                         }
+                    },
+                    onSendMessage = { phone ->
+                        navController.navigate(Screen.ChatThread.createRoute(phone))
                     }
                 )
             }

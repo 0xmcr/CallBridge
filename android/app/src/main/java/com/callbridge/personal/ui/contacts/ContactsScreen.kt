@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
@@ -66,7 +67,8 @@ fun ContactsScreen(
     contactsRepository: ContactsRepository,
     onNavigateToAddContact: () -> Unit,
     onNavigateToContactDetail: (String) -> Unit,
-    onCallNumber: (String) -> Unit
+    onCallNumber: (String) -> Unit,
+    onSendMessage: (String) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var showSearchBar by remember { mutableStateOf(false) }
@@ -228,7 +230,8 @@ fun ContactsScreen(
                                 }
                             },
                             onClick = { onNavigateToContactDetail(contact.id) },
-                            onCallClick = { onCallNumber(contact.phoneE164) }
+                            onCallClick = { onCallNumber(contact.phoneE164) },
+                            onMessageClick = { onSendMessage(contact.phoneE164) }
                         )
                     }
                     item {
@@ -246,7 +249,8 @@ private fun ContactItemCard(
     isFavorite: Boolean,
     onToggleFavorite: () -> Unit,
     onClick: () -> Unit,
-    onCallClick: () -> Unit
+    onCallClick: () -> Unit,
+    onMessageClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -337,11 +341,29 @@ private fun ContactItemCard(
 
             Spacer(modifier = Modifier.width(4.dp))
 
+            // Quick Message Button
+            IconButton(
+                onClick = onMessageClick,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Email,
+                    contentDescription = "Message ${contact.displayName}",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(6.dp))
+
             // Quick Call Button
             IconButton(
                 onClick = onCallClick,
                 modifier = Modifier
-                    .size(38.dp)
+                    .size(36.dp)
                     .clip(CircleShape)
                     .background(CallGreen.copy(alpha = 0.12f))
             ) {
@@ -349,7 +371,7 @@ private fun ContactItemCard(
                     imageVector = Icons.Filled.Call,
                     contentDescription = "Call ${contact.displayName}",
                     tint = CallGreen,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(17.dp)
                 )
             }
         }
