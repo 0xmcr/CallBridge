@@ -2,211 +2,188 @@
 
 <div align="center">
 
-<img src="assets/callbridge_logo.png" alt="CallBridge Logo" width="140" style="border-radius: 28px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);" />
+<img src="assets/callbridge_logo.png" alt="CallBridge Logo" width="130" style="border-radius: 26px; box-shadow: 0 8px 24px rgba(0,0,0,0.35);" />
 
-### Low-Latency VoIP-to-PSTN Calling from Bangladesh to the United States
+### Privacy-First Global VoIP Telephony & 2-Way SMS Messaging Suite
 
+[![Release](https://img.shields.io/badge/Release-v1.0.9%20(Build%2010)-007AFF?style=for-the-badge&logo=android&logoColor=white)](https://github.com/0xmcr/CallBridge/releases)
 [![Android](https://img.shields.io/badge/Android-14%2B%20%7C%20API%2035-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
 [![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack%20Compose%20%7C%20Material%203-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Node.js](https://img.shields.io/badge/Backend-Node.js%20%7C%20Express-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript%205.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Twilio Voice](https://img.shields.io/badge/Telephony-Twilio%20Voice%20SDK-F22F46?style=for-the-badge&logo=twilio&logoColor=white)](https://www.twilio.com/docs/voice)
+[![Twilio Telecom](https://img.shields.io/badge/Telecom-Twilio%20Voice%20%26%20SMS-F22F46?style=for-the-badge&logo=twilio&logoColor=white)](https://www.twilio.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
+<br/>
+
+**[📖 Self-Hosting Guide](USAGE.md)** • **[🤝 Contributing Guidelines](CONTRIBUTING.md)** • **[🔒 Security Policy](SECURITY.md)** • **[📜 License](LICENSE)**
+
 </div>
 
 ---
 
-## 📱 App Showcase
+## 📱 Application Showcase
 
 <div align="center">
-<img src="assets/callbridge_app_showcase.png" alt="CallBridge App Showcase" width="100%" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" />
+<img src="assets/callbridge_app_showcase.png" alt="CallBridge Showcase" width="100%" style="border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" />
 </div>
 
 ---
 
-## 📖 Overview
+## 📖 What is CallBridge?
 
-**CallBridge** is a modern, privacy-focused Android calling application and lightweight backend bridge enabling crisp, low-latency, VoIP-to-PSTN telephone calls from Bangladesh to United States (`+1`) mobile and landline numbers via Twilio Voice.
+**CallBridge** is an enterprise-grade, privacy-first telecommunications application that transforms any Android smartphone into a high-fidelity international calling and SMS communication hub. Powered by **Twilio Programmable Voice & Messaging**, CallBridge bridges low-cost VoIP over internet data directly to worldwide carrier telephone lines (PSTN) across **100+ countries**.
 
-### Why CallBridge?
-Traditional international cellular roaming and international direct dialing (IDD) from Bangladesh to the United States incur high per-minute tariffs (~15-30 BDT/min) with unpredictable audio quality. CallBridge leverages programmable IP telephony to bridge calls over internet data at standard Twilio rates (~$0.014/min) directly to regular US telephone carriers.
-
----
-
-## ✨ Key Features
-
-- 📞 **Outbound Calling to US Numbers (`+1`):** Dial any US mobile, business, or landline phone number directly from the native dialpad.
-- 🎨 **Modern Material 3 Design System:** Built with Jetpack Compose featuring dynamic dark/light theming, responsive typography, and tactile keypads.
-- 📇 **Personal On-Device CRM:** Search, create, edit, and organize US contacts with real-time E.164 normalization and full notes support.
-- 📜 **Full Call History & Duration Tracking:** Detailed call outcome logs, duration counters, timestamps, and one-tap call-back.
-- ⏱️ **Active Call Experience:** Live duration timer ticking strictly upon PSTN connection, in-call mute, speakerphone routing, and clean disconnects.
-- 🔒 **Zero Permanent Client Secrets:** Android APK contains **zero** Twilio credentials. All credentials reside strictly on the backend.
-- 🛡️ **100% On-Device Privacy:** All contacts and call history are stored in a local SQLite Room database on your device. Zero cloud sync leakage.
+Traditional international cellular roaming or direct carrier dialing incurs steep tariffs (~\$0.30 to \$1.50/min) with unpredictable call quality. CallBridge routes voice and SMS through programmable cloud infrastructure at raw wholesale rates (~\$0.014/min for US calls), ensuring crystal-clear audio with **zero provider lock-in**.
 
 ---
 
-## 🏛️ System Architecture & Call Flow
+## ✨ Flagship Capabilities
+
+### 1. 📞 Global VoIP Calling & Authentic DTMF Dialer
+- **Worldwide Reach:** Outbound calling across 100+ sovereign countries with ITU-T E.164 compliance (`+1` US/Canada, `+880` Bangladesh, `+44` UK, `+91` India, `+971` UAE, `+966` Saudi Arabia, and more).
+- **Interactive Country Picker:** Instant alphabetical and code search covering 100+ official Twilio-supported territories with vibrant Unicode flag emojis.
+- **Realistic Telephonic Interaction:** Built-in `ToneGenerator.STREAM_DTMF` emits authentic telephone dial tones (0-9, *, #) with synchronized tactile haptic feedback.
+- **In-Call Controls:** Active duration timer, in-call audio pulse animation, Mute, Speakerphone, and in-call scratchpad notes.
+
+### 2. 💬 CallBridge 2-Way SMS Messaging Suite
+- **Apple iMessage Aesthetic:** Pure ceramic light and OLED dark bubbles with vibrant blue gradients (`#007AFF`), centered date badges, and "• Delivered" delivery receipt tags.
+- **Real-Time 160-Character GSM Billing Counter:** Protects users from unexpected multi-segment carrier fees by tracking GSM 7-bit (160 chars) and Unicode UCS-2 (70 chars) thresholds live as you type.
+- **Quick Business Templates:** One-tap quick response templates (*"Please call me back"*, *"In a meeting"*, etc.) for instant messaging without typing.
+- **Deep CRM Integration:** Send SMS directly with 1 tap from Contacts profiles or Call History log details.
+
+### 3. ⚡ Live Twilio Account Telemetry
+- **Instant Balance Checking:** View live Twilio dollar balance on the Dashboard and in Settings without logging into the Twilio web console.
+- **Caller ID Management:** Easily switch between purchased virtual phone numbers with verified caller identification badges.
+
+### 4. 🛡️ Absolute Zero-Trust Privacy & Architecture
+- **Zero Client Secrets:** The Android APK contains **zero** permanent Twilio credentials or API secrets.
+- **Ephemeral Access Tokens:** The mobile client obtains time-limited JWT tokens with a 1-hour TTL strictly held in volatile memory.
+- **100% On-Device CRM:** All contacts, call history logs, and SMS conversations reside strictly in a local SQLite Room database on your device. Zero cloud sync leakage.
+
+---
+
+## 🏛️ System Architecture
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User as User (Bangladesh)
-    participant App as Android Client (Compose)
-    participant Srv as CallBridge Backend (Node.js)
-    participant Twilio as Twilio Voice Gateway
-    participant PSTN as US Carrier / Destination (+1)
+    actor User as User (Android App)
+    participant Client as CallBridge Client (Kotlin/Compose)
+    participant Server as CallBridge Backend (Node.js/Express)
+    participant Twilio as Twilio Telecom Gateway
+    participant Carrier as Worldwide PSTN / Mobile Carrier
 
-    User->>App: Tap Call / Dial +1 (202) 555-0143
-    App->>Srv: POST /api/v1/voice/token (with Client Identity)
-    Srv->>Srv: Generate short-lived Voice Access Token (TTL 1 hr)
-    Srv-->>App: Return ephemeral JWT Token
-    App->>Twilio: Twilio.Voice.connect(token, destination)
-    Twilio->>Srv: Webhook POST /api/v1/voice/outgoing (TwiML query)
-    Srv->>Srv: Verify Twilio cryptographic signature & destination policy
-    Srv-->>Twilio: Respond with TwiML: <Dial callerId="...">+12025550143</Dial>
-    Twilio->>PSTN: Bridge VoIP stream to US cellular/landline PSTN
-    PSTN-->>User: Call Connected! Real-time bidirectional voice
-    Twilio->>Srv: Webhook POST /api/v1/voice/status (Completed, Duration)
-    App->>App: Persist Call Record into Local Room Database
+    Note over Client,Server: Phase 1: Ephemeral Authentication
+    User->>Client: Open App / Initiate Call
+    Client->>Server: POST /api/v1/voice/token
+    Server->>Server: Generate short-lived JWT (TTL 1 hr)
+    Server-->>Client: Return Ephemeral Token
+
+    Note over Client,Twilio: Phase 2: WebRTC Voice Signaling
+    Client->>Twilio: Voice.connect(token, destination: "+88017...")
+    Twilio->>Server: Webhook POST /api/v1/voice/outgoing
+    Server->>Server: Verify cryptographic HMAC-SHA1 signature
+    Server-->>Twilio: Return TwiML <Dial callerId="...">+88017...</Dial>
+
+    Note over Twilio,Carrier: Phase 3: Global PSTN Bridge
+    Twilio->>Carrier: Connect via global PSTN telecom carrier
+    Carrier-->>User: Call Connected! Full-duplex HD Voice
 ```
 
 ---
 
-## 📁 Repository Structure
+## 📂 Project Directory Structure
 
-```
+```text
 CallBridge/
-├── android/                        # Android Client Application
+├── android/                         # Native Android Application (API 35)
 │   ├── app/
 │   │   ├── src/main/java/com/callbridge/personal/
-│   │   │   ├── calling/            # Twilio SDK CallManager & AudioDeviceManager
-│   │   │   ├── data/               # Room Database, DAOs, Repositories, DTOs
-│   │   │   ├── navigation/         # Compose AppNavigation Host & Routes
-│   │   │   ├── ui/                 # Material 3 Screens (DialPad, ActiveCall, CRM)
-│   │   │   └── MainActivity.kt     # ComponentActivity Entry Point
-│   │   ├── src/test/               # Unit Test Suites (FormatUtils, CRM, Calling)
-│   │   ├── build.gradle.kts        # App Module Build & Dependencies
-│   │   └── proguard-rules.pro      # ProGuard/R8 Rules for Twilio & Room
-│   ├── gradle/wrapper/             # Gradle 8.9 Wrapper Jar & Properties
-│   ├── build.gradle.kts            # Project Build Configuration
-│   └── gradlew                     # Gradle Executable Script
-│
-├── backend/                        # Node.js + TypeScript Service
+│   │   │   ├── calling/             # CallManager, WebRTC & Twilio Voice SDK wrapper
+│   │   │   ├── data/
+│   │   │   │   ├── local/           # Room Database, DAOs, Entities (Contacts, Calls, SMS)
+│   │   │   │   ├── remote/          # Retrofit REST APIs (Tokens, SMS, Telemetry)
+│   │   │   │   └── repository/      # Clean Architecture Repositories
+│   │   │   ├── ui/
+│   │   │   │   ├── activecall/      # In-call screen, DTMF keypad & audio waves
+│   │   │   │   ├── contacts/        # Personal CRM & 1-tap call/SMS actions
+│   │   │   │   ├── dashboard/       # Balance widget, Quick Stats & Recent Calls
+│   │   │   │   ├── dialpad/         # 100+ country dialer with DTMF audio feedback
+│   │   │   │   ├── history/         # Call logs, durations, and recall buttons
+│   │   │   │   ├── messages/        # CallBridge SMS hub & thread conversations
+│   │   │   │   ├── onboarding/      # Splash branding & privacy permissions walkthrough
+│   │   │   │   ├── settings/        # Live telemetry, caller ID switch & themes
+│   │   │   │   ├── theme/           # Midnight Obsidian dark & Pure Ceramic light themes
+│   │   │   │   └── util/            # GSM SMS segment counter & format utilities
+│   │   └── build.gradle.kts         # Versioning, KSP, and dependencies
+├── backend/                         # Node.js / Express / TypeScript Telecom Gateway
 │   ├── src/
-│   │   ├── config/                 # Zod Environment Validation
-│   │   ├── logging/                # Redacting Logger (masks phone numbers)
-│   │   ├── middleware/             # Webhook Cryptographic Signature Verification
-│   │   ├── routes/                 # Voice & Health Endpoints
-│   │   ├── services/               # Twilio Voice Token & TwiML Generator
-│   │   └── server.ts               # Express Server Bootstrap
-│   ├── test/                       # Health, Voice, and E2E Simulation Tests
-│   ├── .env.example                # Example Environment Variables
-│   ├── package.json                # Dependencies & Build Scripts
-│   └── tsconfig.json               # Modern Node16 TypeScript Config
-│
-├── assets/                         # Visual Assets & Branding
-│   ├── callbridge_logo_perfected.png # Master 3D Calling Bridge Logo (1024x1024)
-│   ├── callbridge_app_showcase.png  # 4-Device Production UI Showcase Banner
-│   └── ...                         # App launcher mipmaps & vector graphics
-│
-├── docs/                           # Architecture & Engineering Specifications
-│   ├── ARCHITECTURE.md             # High-level System Topology
-│   ├── CALL_FLOW_SPEC.md           # VoIP-to-PSTN Call Flow Spec
-│   ├── DATA_MODEL_SPEC.md          # Room Database Entities & Schema
-│   ├── END_TO_END_CALLING_GUIDE.md # Live Calling Operator Setup Guide
-│   └── ...                         # Product & Technical Requirement Documents
-│
-├── .gitignore                      # Git Ignore Rules
-├── LICENSE                         # MIT License
-├── README.md                       # Master Documentation
-└── SECURITY.md                     # Security Architecture & Vulnerability Reporting
+│   │   ├── config/                  # Environment variable validation (Zod)
+│   │   ├── routes/                  # Voice, SMS, Account Telemetry & Health routes
+│   │   ├── services/                # Twilio Voice Token, TwiML Dial, & SMS dispatch
+│   │   └── app.ts                   # Express app with cryptographic webhook verification
+│   ├── render.yaml                  # 1-Click Deploy blueprint for Render
+│   ├── railway.json                 # 1-Click Deploy template for Railway
+│   └── Dockerfile                   # Production containerization
+├── docs/                            # Architecture specifications & diagrams
+├── USAGE.md                         # Self-hosting and deployment walkthrough
+├── SECURITY.md                      # Vulnerability reporting and security guarantees
+├── CONTRIBUTING.md                  # Contributor workflow and standards
+└── LICENSE                          # MIT License (© 2026 Maheshwar Chandra Roy)
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start Guide
 
-### Prerequisites
-- **Android Studio** (Koala / Ladybug or newer) with JDK 21
-- **Node.js** v20+ or v22+
-- A **Twilio Account** with a purchased US phone number (`+1`)
-
----
-
-### Step 1: Start the Backend Service
-
+### 1. Clone Repository
 ```bash
-# 1. Navigate to backend directory
+git clone https://github.com/0xmcr/CallBridge.git
+cd CallBridge
+```
+
+### 2. Deploy Backend Gateway
+Deploy your backend in 2 minutes for free on **[Render](USAGE.md#option-a-1-click-deploy-on-render-recommended)**, **[Railway](USAGE.md#option-b-deploy-on-railway)**, or run locally:
+```bash
 cd backend
-
-# 2. Install dependencies
-npm install
-
-# 3. Create .env configuration
 cp .env.example .env
-
-# 4. Fill in your Twilio credentials in .env:
-# TWILIO_ACCOUNT_SID=...
-# TWILIO_API_KEY_SID=...
-# TWILIO_API_KEY_SECRET=...
-# TWILIO_TWIML_APP_SID=...
-# TWILIO_AUTH_TOKEN=...
-# TWILIO_PHONE_NUMBER=+1XXXXXXXXXX
-
-# 5. Build and launch server
+npm install
 npm run build
 npm start
 ```
-*The backend service will boot on `http://localhost:3000`.*
+
+### 3. Build & Install Android APK
+```bash
+cd android
+./gradlew assembleDebug
+```
+Pre-compiled APKs are also available in the repository root:
+- **`CallBridge-v1.0.9-debug.apk`** (Latest production build)
+
+For detailed step-by-step setup with Twilio account creation, buying virtual numbers, and webhook wiring, check **[USAGE.md](USAGE.md)**.
 
 ---
 
-### Step 2: Open and Run Android App
+## 🔒 Security & Vulnerability Reporting
 
-1. Open **Android Studio**.
-2. Select **File > Open...** and choose the `android/` directory.
-3. Allow Gradle to sync dependencies.
-4. Select an Android Emulator or connected physical device.
-5. Click **Run 'app' ▶ (Shift + F10)**.
+CallBridge operates under strict zero-trust standards. If you discover a vulnerability or security concern, please review our **[Security Policy](SECURITY.md)** and report it directly to:  
+📧 **[maheshwarchandra.dev@gmail.com](mailto:maheshwarchandra.dev@gmail.com)**
 
 ---
 
-## 🗺️ Engineering Roadmap
+## 👨‍💻 Author & Principal Architect
 
-- [x] **Phase 1: Outbound Calling MVP (Milestones M0 - M8 Completed)**
-  - Native Compose UI Shell & Material 3 Dark/Light themes
-  - 3D Calling Bridge branding & adaptive launcher icons
-  - Room local database persistence (Contacts & Call History)
-  - Node.js backend with Voice Access Token generator and TwiML webhook
-  - Twilio Voice Android SDK integration with in-call audio controls
-  - End-to-End call flow simulation & test coverage
-  - Personal CRM with real-time search, add/edit/delete, and call logs
-  - ProGuard/R8 release optimization & Network Security Config
-- [ ] **Phase 2: Audio & Cellular Optimization**
-  - WebRTC Opus codec bitrate tuning for mobile 3G/4G bandwidth
-  - Bluetooth headset auto-routing
-  - In-call network jitter and packet loss indicators
-- [ ] **Phase 3: Extended Features**
-  - Incoming call support via Firebase Cloud Messaging (FCM)
-  - Optional cloud backup encryption for contacts
-  - Call recording & AI transcription (optional personal opt-in)
+**CallBridge** is designed, architected, and maintained by:
+
+- **Maheshwar Chandra Roy ([@0xmcr](https://github.com/0xmcr))**
+- **Website & Profile:** [https://github.com/0xmcr](https://github.com/0xmcr)
+- **Email:** [maheshwarchandra.dev@gmail.com](mailto:maheshwarchandra.dev@gmail.com)
 
 ---
 
-## 🔒 Security
+## 📜 License
 
-CallBridge strictly enforces:
-- Zero secrets committed to Git (`.env` in `.gitignore`)
-- Ephemeral, short-lived tokens for mobile clients
-- Server-side cryptographic webhook verification
-- Masked phone numbers in server logs
-
-For full security policy details, see [SECURITY.md](SECURITY.md).
-
----
-
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.  
+Copyright © 2026 **Maheshwar Chandra Roy ([0xmcr](https://github.com/0xmcr))**.
