@@ -7,6 +7,7 @@ import com.callbridge.personal.data.remote.api.ApiClient
 import com.callbridge.personal.data.remote.api.VoiceApiService
 import com.callbridge.personal.data.repository.CallHistoryRepository
 import com.callbridge.personal.data.repository.ContactsRepository
+import com.callbridge.personal.data.repository.MessagesRepository
 
 class CallBridgeApplication : Application() {
 
@@ -20,6 +21,10 @@ class CallBridgeApplication : Application() {
 
     val callHistoryRepository: CallHistoryRepository by lazy {
         CallHistoryRepository(database.callHistoryDao())
+    }
+
+    val messagesRepository: MessagesRepository by lazy {
+        MessagesRepository(database.messageDao())
     }
 
     val themeManager: com.callbridge.personal.ui.theme.ThemeManager by lazy {

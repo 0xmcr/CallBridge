@@ -1,5 +1,6 @@
 package com.callbridge.personal.ui.activecall
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -110,10 +111,14 @@ fun ActiveCallScreen(
 
     // Auto-return when call ends or fails
     LaunchedEffect(callState) {
-        if (callState is CallUiState.Ended) {
-            delay(1500L)
+        if (callState is CallUiState.Ended || callState is CallUiState.Failed) {
+            delay(1200L)
             onEndCall()
         }
+    }
+
+    BackHandler {
+        onEndCall()
     }
 
     // Infinite pulse animation for active audio

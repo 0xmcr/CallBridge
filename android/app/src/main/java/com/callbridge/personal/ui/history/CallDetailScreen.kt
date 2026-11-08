@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -56,7 +58,8 @@ fun CallDetailScreen(
     callId: String,
     callHistoryRepository: CallHistoryRepository,
     onNavigateBack: () -> Unit,
-    onCallNumber: (String) -> Unit
+    onCallNumber: (String) -> Unit,
+    onSendMessage: (String) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -201,18 +204,37 @@ fun CallDetailScreen(
                     }
                 }
 
-                // Call Back Button
-                Button(
-                    onClick = { onCallNumber(record.destinationE164) },
+                // Action Buttons: Call Back & Send Message
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = CallGreen
-                    )
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Icon(Icons.Filled.Call, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Call Back", fontWeight = FontWeight.SemiBold)
+                    Button(
+                        onClick = { onCallNumber(record.destinationE164) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = CallGreen
+                        )
+                    ) {
+                        Icon(Icons.Filled.Call, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Call Back", fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Button(
+                        onClick = { onSendMessage(record.destinationE164) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    ) {
+                        Icon(Icons.Filled.Email, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Message", fontWeight = FontWeight.SemiBold)
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

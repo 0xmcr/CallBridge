@@ -34,6 +34,7 @@ import com.callbridge.personal.calling.CallManager
 import com.callbridge.personal.calling.CallUiState
 import com.callbridge.personal.data.repository.CallHistoryRepository
 import com.callbridge.personal.data.repository.ContactsRepository
+import com.callbridge.personal.data.repository.MessagesRepository
 import com.callbridge.personal.navigation.Screen
 import com.callbridge.personal.ui.activecall.ActiveCallScreen
 import com.callbridge.personal.ui.components.CallBridgeBottomBar
@@ -44,6 +45,8 @@ import com.callbridge.personal.ui.dashboard.DashboardScreen
 import com.callbridge.personal.ui.dialpad.DialPadScreen
 import com.callbridge.personal.ui.history.CallDetailScreen
 import com.callbridge.personal.ui.history.CallHistoryScreen
+import com.callbridge.personal.ui.messages.ChatThreadScreen
+import com.callbridge.personal.ui.messages.MessagesScreen
 import com.callbridge.personal.ui.onboarding.OnboardingScreen
 import com.callbridge.personal.ui.onboarding.SplashScreen
 import com.callbridge.personal.ui.settings.SettingsScreen
@@ -56,6 +59,7 @@ class MainActivity : ComponentActivity() {
     val callManager: CallManager by lazy { app.callManager }
     val contactsRepository: ContactsRepository by lazy { app.contactsRepository }
     val callHistoryRepository: CallHistoryRepository by lazy { app.callHistoryRepository }
+    val messagesRepository: MessagesRepository by lazy { app.messagesRepository }
     val themeManager: ThemeManager by lazy { app.themeManager }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -120,6 +124,7 @@ class MainActivity : ComponentActivity() {
                     callManager = callManager,
                     contactsRepository = contactsRepository,
                     callHistoryRepository = callHistoryRepository,
+                    messagesRepository = messagesRepository,
                     themeManager = themeManager,
                     onCheckAudioPermission = { onGranted ->
                         checkAndRequestAudioPermission(onGranted)
@@ -162,6 +167,7 @@ fun MainApp(
     callManager: CallManager,
     contactsRepository: ContactsRepository,
     callHistoryRepository: CallHistoryRepository,
+    messagesRepository: MessagesRepository,
     themeManager: ThemeManager,
     onCheckAudioPermission: (() -> Unit) -> Unit,
     navController: NavHostController = rememberNavController()
@@ -177,13 +183,13 @@ fun MainApp(
     val isDialSoundEnabled by themeManager.dialSoundEnabled.collectAsState()
     val hasCompletedOnboarding by themeManager.hasCompletedOnboarding.collectAsState()
 
-    // Show BottomBar only on primary top-level tabs when not in an active call
+    // Show BottomBar consistently on primary top-level tabs
     val isBottomBarVisible = currentRoute in listOf(
         Screen.Dashboard.route,
         Screen.Contacts.route,
         Screen.History.route,
         Screen.Settings.route
-    ) && (callState is CallUiState.Idle || callState is CallUiState.Ended || callState is CallUiState.Failed)
+    )
 
     // Unified, glitch-free top-level tab switcher
     val navigateToTab: (String) -> Unit = { targetRoute ->
@@ -256,6 +262,9 @@ fun MainApp(
                     },
                     onNavigateToHistory = {
                         navigateToTab(Screen.History.route)
+                    },
+                    onNavigateToMessages = {
+                        navController.navigate(Screen.Messages.route)
                     },
                     onNavigateToSettings = {
                         navigateToTab(Screen.Settings.route)
@@ -331,7 +340,12 @@ fun MainApp(
                     onEndCall = {
                         callManager.endCall()
                         callManager.resetStateToIdle()
-                        navController.popBackStack(Screen.Dashboard.route, inclusive = false)
+                        navController.navigate(Screen.Dashboard.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                inclusive = false
+                            }
+                            launchSingleTop = true
+                        }
                     }
                 )
             }
@@ -354,6 +368,9 @@ fun MainApp(
                                 callManager.initiateCall(number, "", scope)
                             }
                         }
+                    },
+                    onSendMessage = { phone ->
+                        navController.navigate(Screen.ChatThread.createRoute(phone))
                     }
                 )
             }
@@ -379,6 +396,9 @@ fun MainApp(
                                 callManager.initiateCall(number, "", scope)
                             }
                         }
+                    },
+                    onSendMessage = { phone ->
+                        navController.navigate(Screen.ChatThread.createRoute(phone))
                     }
                 )
             }
@@ -430,6 +450,51 @@ fun MainApp(
                 CallDetailScreen(
                     callId = callId,
                     callHistoryRepository = callHistoryRepository,
+                    onNavigateBack = { navController.popBackStack() },
+                    onCallNumber = { number ->
+                        onCheckAudioPermission {
+                            navController.navigate(Screen.ActiveCall.createRoute(number))
+                            val activity = navController.context as? ComponentActivity
+                            activity?.lifecycleScope?.let { scope ->
+                                callManager.initiateCall(number, "", scope)
+                            }
+                        }
+                    },
+                    onSendMessage = { phone ->
+                        navController.navigate(Screen.ChatThread.createRoute(phone))
+                    }
+                )
+            }
+
+            // SMS Messages Hub
+            composable(Screen.Messages.route) {
+                MessagesScreen(
+                    messagesRepository = messagesRepository,
+                    themeManager = themeManager,
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToThread = { address ->
+                        navController.navigate(Screen.ChatThread.createRoute(address))
+                    }
+                )
+            }
+
+            // Chat Thread Detail
+            composable(
+                route = Screen.ChatThread.route,
+                arguments = listOf(
+                    navArgument("address") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val encodedAddress = backStackEntry.arguments?.getString("address") ?: ""
+                val address = try {
+                    java.net.URLDecoder.decode(encodedAddress, "UTF-8")
+                } catch (e: Exception) {
+                    encodedAddress
+                }
+                ChatThreadScreen(
+                    recipientAddress = address,
+                    messagesRepository = messagesRepository,
+                    themeManager = themeManager,
                     onNavigateBack = { navController.popBackStack() },
                     onCallNumber = { number ->
                         onCheckAudioPermission {

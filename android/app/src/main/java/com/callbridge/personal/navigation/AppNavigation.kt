@@ -27,5 +27,9 @@ sealed class Screen(val route: String) {
     data object CallDetail : Screen("call_detail/{callId}") {
         fun createRoute(callId: String): String = "call_detail/$callId"
     }
+    data object Messages : Screen("messages")
+    data object ChatThread : Screen("chat_thread/{address}") {
+        fun createRoute(address: String): String = "chat_thread/${java.net.URLEncoder.encode(address, "UTF-8")}"
+    }
     data object Settings : Screen("settings")
 }
