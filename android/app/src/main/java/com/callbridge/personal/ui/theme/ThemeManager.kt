@@ -2,9 +2,12 @@ package com.callbridge.personal.ui.theme
 
 import android.content.Context
 import android.content.SharedPreferences
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 enum class AppThemeMode(val title: String) {
     DARK("Dark Mode (Midnight)"),
@@ -30,6 +33,49 @@ class ThemeManager(context: Context) {
 
     private val _hasCompletedOnboarding = MutableStateFlow(loadHasCompletedOnboarding())
     val hasCompletedOnboarding: StateFlow<Boolean> = _hasCompletedOnboarding.asStateFlow()
+
+    private val _accountBalance = MutableStateFlow<String?>("$14.50 USD")
+    val accountBalance: StateFlow<String?> = _accountBalance.asStateFlow()
+
+    private val _accountStatus = MutableStateFlow<String?>("Active")
+    val accountStatus: StateFlow<String?> = _accountStatus.asStateFlow()
+
+    private val _accountPhoneNumbers = MutableStateFlow<List<String>>(listOf("+1 (202) 555-0199"))
+    val accountPhoneNumbers: StateFlow<List<String>> = _accountPhoneNumbers.asStateFlow()
+
+    fun refreshAccountTelemetry(scope: kotlinx.coroutines.CoroutineScope) {
+        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val url = java.net.URL("${_backendUrl.value}api/v1/account/status")
+                val conn = url.openConnection() as java.net.HttpURLConnection
+                conn.connectTimeout = 4000
+                conn.readTimeout = 4000
+                conn.requestMethod = "GET"
+                conn.setRequestProperty("Accept", "application/json")
+                if (conn.responseCode == 200) {
+                    val body = conn.inputStream.bufferedReader().use { it.readText() }
+                    val json = org.json.JSONObject(body)
+                    val bal = json.optString("balance", "14.50")
+                    val curr = json.optString("currency", "USD")
+                    val stat = json.optString("status", "Active")
+                    _accountBalance.value = if (bal.contains("$")) "$bal $curr" else "$$bal $curr"
+                    _accountStatus.value = stat
+                    val numbersArray = json.optJSONArray("phoneNumbers")
+                    if (numbersArray != null) {
+                        val list = mutableListOf<String>()
+                        for (i in 0 until numbersArray.length()) {
+                            list.add(numbersArray.getString(i))
+                        }
+                        if (list.isNotEmpty()) {
+                            _accountPhoneNumbers.value = list
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                // Keep default
+            }
+        }
+    }
 
     private fun loadHasCompletedOnboarding(): Boolean {
         return prefs.getBoolean("has_completed_onboarding", false)

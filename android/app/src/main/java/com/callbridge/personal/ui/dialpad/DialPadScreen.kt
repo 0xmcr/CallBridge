@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -30,6 +32,7 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
@@ -39,6 +42,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -71,18 +75,28 @@ fun DialPadScreen(
     val haptic = LocalHapticFeedback.current
     val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
 
-    // Internal state stores only the 10 national digits (e.g. "2025550143")
+    // Internal state stores national or international digits (e.g. "+88017...", "2025550143")
     var nationalDigits by remember {
-        mutableStateOf(FormatUtils.extractNationalDigits(initialNumber))
+        mutableStateOf(if (initialNumber.isNotBlank()) initialNumber else "")
     }
 
     var clipboardDigits by remember { mutableStateOf<String?>(null) }
+    var showCountryPicker by remember { mutableStateOf(false) }
 
-    // Check clipboard for auto-detecting US phone numbers
+    // Resolve country dynamically from input
+    val countryInfo = remember(nationalDigits) {
+        FormatUtils.resolveCountryInfo(nationalDigits)
+    }
+
+    // Check clipboard for auto-detecting phone numbers
     androidx.compose.runtime.LaunchedEffect(Unit) {
         val clipText = clipboardManager.getText()?.text
         if (!clipText.isNullOrBlank()) {
-            val extracted = FormatUtils.extractNationalDigits(clipText)
+            val extracted = if (clipText.startsWith("+")) {
+                clipText.replace("[^0-9+]".toRegex(), "")
+            } else {
+                FormatUtils.extractNationalDigits(clipText)
+            }
             if (extracted.length >= 7) {
                 clipboardDigits = extracted
             }
@@ -90,11 +104,63 @@ fun DialPadScreen(
     }
 
     val validation = remember(nationalDigits) {
-        FormatUtils.validateNanp(nationalDigits)
+        FormatUtils.validateGlobalE164(nationalDigits)
     }
 
     val locationHint = remember(nationalDigits) {
-        FormatUtils.getAreaCodeLocation(nationalDigits)
+        if (!nationalDigits.startsWith("+") || nationalDigits.startsWith("+1")) {
+            FormatUtils.getAreaCodeLocation(nationalDigits)
+        } else {
+            null
+        }
+    }
+
+    if (showCountryPicker) {
+        AlertDialog(
+            onDismissRequest = { showCountryPicker = false },
+            title = { Text("Select Destination Country") },
+            text = {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(340.dp)
+                ) {
+                    items(FormatUtils.SUPPORTED_COUNTRIES) { country ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    nationalDigits = country.dialCode
+                                    showCountryPicker = false
+                                }
+                                .padding(vertical = 10.dp, horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = country.flag, fontSize = 22.sp)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = country.name,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                            Text(
+                                text = country.dialCode,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showCountryPicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -124,7 +190,7 @@ fun DialPadScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "USA Direct",
+                                    text = if (countryInfo.dialCode == "+1") "USA Direct" else "${countryInfo.name} Direct",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = CallGreen
@@ -162,7 +228,7 @@ fun DialPadScreen(
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
             ) {
-                // Modern curved input pill with USA flag
+                // Modern curved input pill with Dynamic Flag Badge
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -178,31 +244,43 @@ fun DialPadScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        // USA Flag Badge
+                        // Dynamic Country Flag Badge (Clickable to switch)
                         Surface(
                             shape = RoundedCornerShape(10.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier.clickable { showCountryPicker = true }
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
                             ) {
-                                Text(text = "🇺🇸", fontSize = 16.sp)
+                                Text(text = countryInfo.flag, fontSize = 16.sp)
                                 Spacer(modifier = Modifier.width(5.dp))
                                 Text(
-                                    text = "+1",
+                                    text = countryInfo.dialCode,
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Text(
+                                    text = "▾",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
 
                         // Formatted Number / Placeholder
+                        val displayText = when {
+                            nationalDigits.isEmpty() -> "Enter phone number..."
+                            nationalDigits.startsWith("+") -> nationalDigits
+                            else -> FormatUtils.formatNanpDisplay(nationalDigits)
+                        }
                         Text(
-                            text = if (nationalDigits.isEmpty()) "Enter phone number..." else validation.formatted,
+                            text = displayText,
                             style = MaterialTheme.typography.headlineMedium.copy(
-                                fontSize = if (nationalDigits.length > 7) 22.sp else 24.sp
+                                fontSize = if (nationalDigits.length > 11) 20.sp else if (nationalDigits.length > 7) 22.sp else 24.sp
                             ),
                             fontWeight = FontWeight.Bold,
                             color = if (nationalDigits.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f) else MaterialTheme.colorScheme.onSurface,
@@ -303,8 +381,9 @@ fun DialPadScreen(
                                 modifier = Modifier.size(14.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
+                            val pasteLabel = if (clipboardDigits!!.startsWith("+")) clipboardDigits!! else FormatUtils.formatNanpDisplay(clipboardDigits!!)
                             Text(
-                                text = "Paste ${FormatUtils.formatNanpDisplay(clipboardDigits!!)}",
+                                text = "Paste $pasteLabel",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -342,15 +421,21 @@ fun DialPadScreen(
                                     }
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
 
-                                    // Strictly limit to 10 national digits
-                                    if (digit in "0".."9") {
-                                        if (nationalDigits.length < 10) {
-                                            nationalDigits += digit
-                                        } else {
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    val maxLen = if (nationalDigits.startsWith("+")) 16 else 10
+                                    if (nationalDigits.length < maxLen) {
+                                        nationalDigits += digit
+                                    } else {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    }
+                                },
+                                onLongClick = if (digit == "0") {
+                                    {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        if (!nationalDigits.startsWith("+")) {
+                                            nationalDigits = "+$nationalDigits"
                                         }
                                     }
-                                }
+                                } else null
                             )
                         }
                     }
@@ -373,7 +458,8 @@ fun DialPadScreen(
                     onClick = {
                         if (validation.isValid) {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onStartCall(validation.e164)
+                            val numberToCall = if (nationalDigits.startsWith("+")) nationalDigits else validation.e164
+                            onStartCall(numberToCall)
                         }
                     },
                     modifier = Modifier.size(72.dp),
@@ -418,11 +504,13 @@ fun DialPadScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun DialKeyButton(
     digit: String,
     sub: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null
 ) {
     Surface(
         modifier = Modifier
@@ -434,30 +522,38 @@ private fun DialKeyButton(
                 shape = CircleShape
             ),
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-        onClick = onClick
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxSize()
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .combinedClickable(
+                    onClick = onClick,
+                    onLongClick = onLongClick
+                ),
+            contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = digit,
-                style = MaterialTheme.typography.titleLarge.copy(fontSize = 28.sp),
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            if (sub.isNotEmpty()) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
                 Text(
-                    text = sub,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 10.sp,
-                        letterSpacing = 1.sp
-                    ),
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.primary
+                    text = digit,
+                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 28.sp),
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
+                if (sub.isNotEmpty()) {
+                    Text(
+                        text = sub,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 10.sp,
+                            letterSpacing = 1.sp
+                        ),
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
     }

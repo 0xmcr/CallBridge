@@ -11,6 +11,12 @@ data class PhoneValidation(
     val message: String
 )
 
+data class CountryInfo(
+    val flag: String,
+    val name: String,
+    val dialCode: String
+)
+
 object FormatUtils {
 
     /**
@@ -346,6 +352,108 @@ object FormatUtils {
         return cleaned.take(10)
     }
 
+    val SUPPORTED_COUNTRIES = listOf(
+        CountryInfo("🇺🇸", "United States", "+1"),
+        CountryInfo("🇨🇦", "Canada", "+1"),
+        CountryInfo("🇧🇩", "Bangladesh", "+880"),
+        CountryInfo("🇬🇧", "United Kingdom", "+44"),
+        CountryInfo("🇮🇳", "India", "+91"),
+        CountryInfo("🇦🇪", "UAE", "+971"),
+        CountryInfo("🇸🇦", "Saudi Arabia", "+966"),
+        CountryInfo("🇵🇰", "Pakistan", "+92"),
+        CountryInfo("🇩🇪", "Germany", "+49"),
+        CountryInfo("🇦🇺", "Australia", "+61"),
+        CountryInfo("🇫🇷", "France", "+33"),
+        CountryInfo("🇸🇬", "Singapore", "+65"),
+        CountryInfo("🇲🇾", "Malaysia", "+60"),
+        CountryInfo("🇮🇹", "Italy", "+39"),
+        CountryInfo("🇪🇸", "Spain", "+34"),
+        CountryInfo("🇯🇵", "Japan", "+81"),
+        CountryInfo("🇨🇳", "China", "+86"),
+        CountryInfo("🇧🇷", "Brazil", "+55"),
+        CountryInfo("🇳🇬", "Nigeria", "+234"),
+        CountryInfo("🇿🇦", "South Africa", "+27"),
+        CountryInfo("🇶🇦", "Qatar", "+974"),
+        CountryInfo("🇹🇷", "Turkey", "+90"),
+        CountryInfo("🇵🇭", "Philippines", "+63"),
+        CountryInfo("🇪🇬", "Egypt", "+20"),
+        CountryInfo("🇮🇩", "Indonesia", "+62"),
+        CountryInfo("🇮🇪", "Ireland", "+353"),
+        CountryInfo("🇳🇱", "Netherlands", "+31"),
+        CountryInfo("🇨🇭", "Switzerland", "+41"),
+        CountryInfo("🇸🇪", "Sweden", "+46"),
+        CountryInfo("🇰🇼", "Kuwait", "+965"),
+        CountryInfo("🇴🇲", "Oman", "+968")
+    )
+
+    /**
+     * Resolves the country info based on prefix or explicit +code.
+     */
+    fun resolveCountryInfo(input: String): CountryInfo {
+        val trimmed = input.trim()
+        if (trimmed.startsWith("+")) {
+            val codeDigits = trimmed.removePrefix("+").take(4)
+            // Match descending by dial code length (e.g. +880 before +88, +1)
+            val matched = SUPPORTED_COUNTRIES
+                .filter { trimmed.startsWith(it.dialCode) }
+                .maxByOrNull { it.dialCode.length }
+            if (matched != null) return matched
+            return CountryInfo("🌐", "International", "+$codeDigits")
+        }
+        return CountryInfo("🇺🇸", "United States", "+1")
+    }
+
+    /**
+     * Validates an E.164 phone number globally or as standard US number.
+     */
+    fun validateGlobalE164(input: String): PhoneValidation {
+        val trimmed = input.trim().replace("[^0-9+]".toRegex(), "")
+        if (trimmed.isEmpty()) {
+            return PhoneValidation(
+                isValid = false,
+                formatted = "",
+                e164 = "",
+                message = "Enter phone number"
+            )
+        }
+
+        if (trimmed.startsWith("+")) {
+            val digitsOnly = trimmed.removePrefix("+")
+            val country = resolveCountryInfo(trimmed)
+            return when {
+                digitsOnly.length < 7 -> PhoneValidation(
+                    isValid = false,
+                    formatted = trimmed,
+                    e164 = trimmed,
+                    message = "Incomplete international number"
+                )
+                digitsOnly.length > 15 -> PhoneValidation(
+                    isValid = false,
+                    formatted = trimmed,
+                    e164 = trimmed,
+                    message = "Exceeds max 15 digits (E.164)"
+                )
+                else -> PhoneValidation(
+                    isValid = true,
+                    formatted = trimmed,
+                    e164 = trimmed,
+                    message = "${country.flag} ${country.name} Verified"
+                )
+            }
+        }
+
+        // Without '+' sign: validate as 10-digit US number or auto-format
+        if (trimmed.length == 10) {
+            val nanp = validateNanp(trimmed)
+            if (nanp.isValid) {
+                return nanp.copy(message = "🇺🇸 Valid US Number")
+            }
+            return nanp
+        }
+
+        return validateNanp(trimmed)
+    }
+
     /**
      * Formats national digits into clean North American standard phone representation:
      * e.g. "+1 (202) 555-0143"
@@ -406,8 +514,9 @@ object FormatUtils {
     }
 
     /**
-     * Normalizes a user-input phone number to E.164 US format (+1XXXXXXXXXX).
+     * Normalizes a user-input phone number to standard E.164 international format.
      * If user enters a 10-digit number without country code, prepends "+1".
+     * If starts with "+", preserves full international format.
      * Strips whitespace, dashes, parentheses.
      */
     fun normalizePhoneNumber(input: String): String {
@@ -416,10 +525,10 @@ object FormatUtils {
 
         val cleaned = trimmed.replace("[^0-9+]".toRegex(), "")
         return when {
-            cleaned.startsWith("+1") -> cleaned
-            cleaned.startsWith("1") && cleaned.length == 11 -> "+$cleaned"
             cleaned.startsWith("+") -> cleaned
-            else -> "+1$cleaned"
+            cleaned.startsWith("1") && cleaned.length == 11 -> "+$cleaned"
+            cleaned.length == 10 -> "+1$cleaned"
+            else -> if (cleaned.isNotEmpty()) "+$cleaned" else ""
         }
     }
 

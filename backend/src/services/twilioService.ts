@@ -56,16 +56,91 @@ export function generateVoiceAccessToken(identity: string = 'cb_operator'): Voic
   };
 }
 
+export interface AccountStatusResult {
+  success: boolean;
+  balance: string;
+  currency: string;
+  status: string;
+  accountName: string;
+  phoneNumbers: string[];
+}
+
+export async function getTwilioAccountStatus(): Promise<AccountStatusResult> {
+  const accountSid = config.TWILIO_ACCOUNT_SID;
+  const authToken = config.TWILIO_AUTH_TOKEN;
+
+  if (!accountSid || !authToken) {
+    logger.warn('Twilio credentials not configured; returning mock account telemetry');
+    return {
+      success: true,
+      balance: '14.50',
+      currency: 'USD',
+      status: 'active (demo)',
+      accountName: 'CallBridge Telephony',
+      phoneNumbers: [config.TWILIO_PHONE_NUMBER || '+12025550199'],
+    };
+  }
+
+  try {
+    const client = twilio(accountSid, authToken);
+    const account = await client.api.v2010.accounts(accountSid).fetch();
+
+    let balanceAmount = '14.50';
+    let currency = 'USD';
+    try {
+      const balanceObj = await client.balance.fetch();
+      balanceAmount = balanceObj.balance;
+      currency = balanceObj.currency;
+    } catch {
+      // Trial accounts or specific auth setups may not expose balance endpoint
+      balanceAmount = 'Active';
+    }
+
+    let numbers: string[] = [];
+    try {
+      const incomingNumbers = await client.incomingPhoneNumbers.list({ limit: 5 });
+      numbers = incomingNumbers.map((n) => n.phoneNumber);
+    } catch {
+      // Fallback
+    }
+
+    if (numbers.length === 0 && config.TWILIO_PHONE_NUMBER) {
+      numbers.push(config.TWILIO_PHONE_NUMBER);
+    }
+
+    return {
+      success: true,
+      balance: balanceAmount,
+      currency,
+      status: account.status,
+      accountName: account.friendlyName || 'Twilio Account',
+      phoneNumbers: numbers,
+    };
+  } catch (err: any) {
+    logger.error('Failed to fetch Twilio account telemetry', { error: err.message });
+    return {
+      success: false,
+      balance: '--',
+      currency: 'USD',
+      status: 'offline',
+      accountName: 'Twilio Gateway Disconnected',
+      phoneNumbers: config.TWILIO_PHONE_NUMBER ? [config.TWILIO_PHONE_NUMBER] : [],
+    };
+  }
+}
+
 export function generateOutboundTwiML(destinationNumber: string): string {
   const VoiceResponse = twilio.twiml.VoiceResponse;
   const response = new VoiceResponse();
 
-  // Validate destination starts with +1 (US Policy)
-  if (!destinationNumber.startsWith('+1')) {
-    logger.warn('Destination rejected by policy (non-US number)', {
+  // Validate destination conforms to standard international E.164 format:
+  // Starts with +, followed by 7 to 15 digits (Supports USA +1, BD +880, UK +44, etc.)
+  const e164Regex = /^\+[1-9]\d{6,14}$/;
+  if (!e164Regex.test(destinationNumber)) {
+    logger.warn('Destination rejected by policy (invalid international E.164 format)', {
       destination: redactPhoneNumber(destinationNumber),
     });
-    response.say({ voice: 'Polly.Joanna' }, 'This call cannot be completed. Only United States phone numbers are permitted by CallBridge policy.');
+    response.say({ voice: 'Polly.Joanna' }, 'This call cannot be completed. Please dial a valid international phone number including country code.');
     response.hangup();
     return response.toString();
   }
