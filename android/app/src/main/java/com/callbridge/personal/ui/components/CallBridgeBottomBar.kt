@@ -45,6 +45,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.callbridge.personal.navigation.Screen
+import com.callbridge.personal.ui.i18n.AppStrings
+import com.callbridge.personal.ui.i18n.I18nStrings
+import com.callbridge.personal.ui.theme.AppLanguage
 
 data class NavigationItem(
     val route: String,
@@ -53,28 +56,28 @@ data class NavigationItem(
     val unselectedIcon: ImageVector
 )
 
-val BottomNavigationItems = listOf(
+fun getBottomNavigationItems(strings: I18nStrings): List<NavigationItem> = listOf(
     NavigationItem(
         route = Screen.Dashboard.route,
-        label = "Dashboard",
+        label = strings.tabDashboard,
         selectedIcon = Icons.Filled.Home,
         unselectedIcon = Icons.Outlined.Home
     ),
     NavigationItem(
         route = Screen.Contacts.route,
-        label = "Contacts",
+        label = strings.tabContacts,
         selectedIcon = Icons.Filled.Contacts,
         unselectedIcon = Icons.Outlined.Contacts
     ),
     NavigationItem(
         route = Screen.History.route,
-        label = "History",
+        label = strings.tabHistory,
         selectedIcon = Icons.Filled.History,
         unselectedIcon = Icons.Outlined.History
     ),
     NavigationItem(
         route = Screen.Settings.route,
-        label = "Settings",
+        label = strings.tabSettings,
         selectedIcon = Icons.Filled.Settings,
         unselectedIcon = Icons.Outlined.Settings
     )
@@ -89,8 +92,12 @@ val BottomNavigationItems = listOf(
 @Composable
 fun CallBridgeBottomBar(
     currentRoute: String?,
+    language: AppLanguage = AppLanguage.ENGLISH,
     onNavigateToRoute: (String) -> Unit
 ) {
+    val strings = remember(language) { AppStrings.forLanguage(language) }
+    val navigationItems = remember(strings) { getBottomNavigationItems(strings) }
+
     Surface(
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 3.dp,
@@ -113,7 +120,7 @@ fun CallBridgeBottomBar(
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                BottomNavigationItems.forEach { item ->
+                navigationItems.forEach { item ->
                     val isSelected = currentRoute == item.route
 
                     val indicatorBgColor by animateColorAsState(

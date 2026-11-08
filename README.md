@@ -13,7 +13,7 @@
 [![Node.js](https://img.shields.io/badge/Backend-Node.js%20%7C%20Express-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript%205.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Twilio Telecom](https://img.shields.io/badge/Telecom-Twilio%20Voice%20%26%20SMS-F22F46?style=for-the-badge&logo=twilio&logoColor=white)](https://www.twilio.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+[![License](https://img.shields.io/badge/License-CallBridge%20Non--Commercial-red.svg?style=for-the-badge)](LICENSE)
 
 <br/>
 
@@ -183,5 +183,5 @@ CallBridge operates under strict zero-trust standards. If you discover a vulnera
 
 ## 📜 License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.  
+This project is licensed under the **CallBridge Source-Available & Non-Commercial License** — commercial resale, repackaging, or paid monetization is strictly prohibited without written authorization. See the [LICENSE](LICENSE) file for complete terms.  
 Copyright © 2026 **Maheshwar Chandra Roy ([0xmcr](https://github.com/0xmcr))**.

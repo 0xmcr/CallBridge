@@ -13,7 +13,7 @@
 [![Node.js](https://img.shields.io/badge/Backend-Node.js%20%7C%20Express-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript%205.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Twilio Telecom](https://img.shields.io/badge/Telecom-Twilio%20Voice%20%26%20SMS-F22F46?style=for-the-badge&logo=twilio&logoColor=white)](https://www.twilio.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+[![License](https://img.shields.io/badge/License-কলব্রিজ%20নন--কমার্শিয়াল-red.svg?style=for-the-badge)](LICENSE)
 
 <br/>
 
@@ -105,5 +105,5 @@ sequenceDiagram
 
 ## 📜 লাইসেন্স
 
-এই প্রজেক্টটি **MIT License**-এর অধীনে উন্মুক্ত — বিস্তারিত জানার জন্য [LICENSE](LICENSE) ফাইলটি দেখুন।  
+এই প্রজেক্টটি **CallBridge Source-Available & Non-Commercial License**-এর অধীনে উন্মুক্ত — বাণিজ্যিক পুনর্বিক্রয়, সাবস্ক্রিপশন ব্যবসা বা পেইড প্যাকেজিং সম্পূর্ণ নিষিদ্ধ। বিস্তারিত জানার জন্য [LICENSE](LICENSE) ফাইলটি দেখুন।  
 কপিরাইট © ২০২৬ **মহেশ্বর চন্দ্র রায় ([0xmcr](https://github.com/0xmcr))**।

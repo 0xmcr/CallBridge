@@ -15,12 +15,31 @@ enum class AppThemeMode(val title: String) {
     SYSTEM("System Default")
 }
 
+enum class AppLanguage(
+    val code: String,
+    val nativeName: String,
+    val englishName: String,
+    val flag: String
+) {
+    ENGLISH("en", "English", "English", "🇺🇸"),
+    BENGALI("bn", "বাংলা", "Bengali", "🇧🇩"),
+    HINDI("hi", "हिन्दी", "Hindi", "🇮🇳"),
+    SPANISH("es", "Español", "Spanish", "🇪🇸"),
+    ARABIC("ar", "العربية", "Arabic", "🇸🇦"),
+    PORTUGUESE("pt", "Português", "Portuguese", "🇵🇹"),
+    RUSSIAN("ru", "Русский", "Russian", "🇷🇺"),
+    CHINESE("zh", "中文", "Chinese", "🇨🇳")
+}
+
 class ThemeManager(context: Context) {
 
     private val prefs: SharedPreferences = context.getSharedPreferences("callbridge_prefs", Context.MODE_PRIVATE)
 
     private val _themeMode = MutableStateFlow(loadThemeMode())
     val themeMode: StateFlow<AppThemeMode> = _themeMode.asStateFlow()
+
+    private val _appLanguage = MutableStateFlow(loadAppLanguage())
+    val appLanguage: StateFlow<AppLanguage> = _appLanguage.asStateFlow()
 
     private val _dialSoundEnabled = MutableStateFlow(loadDialSound())
     val dialSoundEnabled: StateFlow<Boolean> = _dialSoundEnabled.asStateFlow()
@@ -127,5 +146,19 @@ class ThemeManager(context: Context) {
         val clean = if (url.trim().endsWith("/")) url.trim() else "${url.trim()}/"
         prefs.edit().putString("backend_url", clean).apply()
         _backendUrl.value = clean
+    }
+
+    private fun loadAppLanguage(): AppLanguage {
+        val saved = prefs.getString("app_language", AppLanguage.ENGLISH.name)
+        return try {
+            AppLanguage.valueOf(saved ?: AppLanguage.ENGLISH.name)
+        } catch (e: Exception) {
+            AppLanguage.ENGLISH
+        }
+    }
+
+    fun setAppLanguage(language: AppLanguage) {
+        prefs.edit().putString("app_language", language.name).apply()
+        _appLanguage.value = language
     }
 }

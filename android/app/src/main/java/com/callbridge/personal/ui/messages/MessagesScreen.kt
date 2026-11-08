@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
@@ -71,8 +72,8 @@ import com.callbridge.personal.ui.theme.ThemeManager
 import com.callbridge.personal.ui.util.FormatUtils
 import kotlinx.coroutines.launch
 
-// Apple iMessage Brand Colors
-private val AppleBlue = Color(0xFF007AFF)
+// CallBridge SMS Brand Tokens
+private val CallBridgeBlue = Color(0xFF007AFF)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -120,13 +121,13 @@ fun MessagesScreen(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(AppleBlue.copy(alpha = 0.15f)),
+                            .background(CallBridgeBlue.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Edit,
                             contentDescription = null,
-                            tint = AppleBlue,
+                            tint = CallBridgeBlue,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -141,7 +142,7 @@ fun MessagesScreen(
             text = {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "Send SMS via Twilio ($callerId) to any destination worldwide:",
+                        text = "Send SMS via CallBridge ($callerId) to any destination worldwide:",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -191,7 +192,7 @@ fun MessagesScreen(
                         }
                     },
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AppleBlue),
+                    colors = ButtonDefaults.buttonColors(containerColor = CallBridgeBlue),
                     enabled = newRecipient.isNotBlank() && newBody.isNotBlank() && !isSending
                 ) {
                     Text(if (isSending) "Sending..." else "Send", fontWeight = FontWeight.Bold, color = Color.White)
@@ -238,13 +239,13 @@ fun MessagesScreen(
                             modifier = Modifier
                                 .size(34.dp)
                                 .clip(CircleShape)
-                                .background(AppleBlue.copy(alpha = 0.12f)),
+                                .background(CallBridgeBlue.copy(alpha = 0.12f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Edit,
                                 contentDescription = "New Message",
-                                tint = AppleBlue,
+                                tint = CallBridgeBlue,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -277,7 +278,7 @@ fun MessagesScreen(
                     .padding(bottom = 8.dp),
                 icon = { Icon(Icons.Filled.Edit, contentDescription = "New Message") },
                 text = { Text("New Message", fontWeight = FontWeight.SemiBold) },
-                containerColor = AppleBlue,
+                containerColor = CallBridgeBlue,
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp)
             )
@@ -353,13 +354,13 @@ fun MessagesScreen(
                             modifier = Modifier
                                 .size(72.dp)
                                 .clip(CircleShape)
-                                .background(AppleBlue.copy(alpha = 0.12f)),
+                                .background(CallBridgeBlue.copy(alpha = 0.12f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.ChatBubbleOutline,
                                 contentDescription = null,
-                                tint = AppleBlue,
+                                tint = CallBridgeBlue,
                                 modifier = Modifier.size(36.dp)
                             )
                         }
@@ -374,7 +375,7 @@ fun MessagesScreen(
                             text = if (searchQuery.isNotEmpty())
                                 "No conversations found matching '$searchQuery'."
                             else
-                                "Send two-way SMS anywhere worldwide using your Twilio number ($callerId).",
+                                "Send two-way SMS anywhere worldwide using your CallBridge number ($callerId).",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -382,7 +383,7 @@ fun MessagesScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
                             onClick = { showNewMessageDialog = true },
-                            colors = ButtonDefaults.buttonColors(containerColor = AppleBlue),
+                            colors = ButtonDefaults.buttonColors(containerColor = CallBridgeBlue),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -411,19 +412,19 @@ fun MessagesScreen(
                                 .padding(vertical = 10.dp, horizontal = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Apple Style Circular Avatar with Country Flag & Initial
+                            // CallBridge Circular Contact Avatar
                             Box(
                                 modifier = Modifier
-                                    .size(50.dp)
+                                    .size(48.dp)
                                     .clip(CircleShape)
-                                    .background(
-                                        MaterialTheme.colorScheme.surfaceVariant
-                                    ),
+                                    .background(CallBridgeBlue.copy(alpha = 0.12f)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = country.flag,
-                                    fontSize = 24.sp
+                                Icon(
+                                    imageVector = Icons.Filled.Person,
+                                    contentDescription = null,
+                                    tint = CallBridgeBlue,
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
 
@@ -455,7 +456,7 @@ fun MessagesScreen(
                                         Icon(
                                             imageVector = Icons.Filled.Check,
                                             contentDescription = "Sent",
-                                            tint = AppleBlue,
+                                            tint = CallBridgeBlue,
                                             modifier = Modifier.size(14.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))

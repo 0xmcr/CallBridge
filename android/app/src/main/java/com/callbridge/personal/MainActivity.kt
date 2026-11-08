@@ -182,6 +182,7 @@ fun MainApp(
     val activeCallNote by callManager.activeCallNote.collectAsState()
     val isDialSoundEnabled by themeManager.dialSoundEnabled.collectAsState()
     val hasCompletedOnboarding by themeManager.hasCompletedOnboarding.collectAsState()
+    val appLanguage by themeManager.appLanguage.collectAsState()
 
     // Show BottomBar consistently on primary top-level tabs
     val isBottomBarVisible = currentRoute in listOf(
@@ -212,6 +213,7 @@ fun MainApp(
             if (isBottomBarVisible) {
                 CallBridgeBottomBar(
                     currentRoute = currentRoute,
+                    language = appLanguage,
                     onNavigateToRoute = navigateToTab
                 )
             }

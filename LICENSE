@@ -1,23 +1,52 @@
-MIT License
-
+CallBridge Source-Available & Non-Commercial License
 Copyright (c) 2026 Maheshwar Chandra Roy (0xmcr)
-Repository: https://github.com/0xmcr/CallBridge
-Contact: maheshwarchandra.dev@gmail.com
+Principal Architect & Creator: Maheshwar Chandra Roy
+Official Repository: https://github.com/0xmcr/CallBridge
+Contact & Licensing Inquiries: maheshwarchandra.dev@gmail.com
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+==============================================================================
+TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND MODIFICATION
+==============================================================================
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. PERMITTED USES:
+   Permission is hereby granted, free of charge, to any person obtaining a copy
+   of this software and associated documentation files (the "Software"):
+   a. To inspect, study, learn from, and audit the source code for educational
+      and personal security research purposes.
+   b. To deploy and execute the Software strictly for personal, private, and
+      non-commercial telecommunication purposes using personal credentials.
+   c. To modify the code and submit bug fixes, localization translations,
+      or feature enhancements via Pull Requests to the official CallBridge repository.
 
+2. STRICT COMMERCIAL RESTRICTIONS (COMMERCIAL SALE PROHIBITED):
+   a. You MAY NOT sell, resell, lease, rent, license, sub-license, or redistribute
+      the Software or any derivative fork thereof for financial compensation,
+      commercial profit, or monetization.
+   b. You MAY NOT package the Software as a paid digital product, closed-source SaaS
+      subscription, or marketplace asset (including but not limited to CodeCanyon,
+      Gumroad, Fiverr, Upwork, Google Play Store, or Apple App Store) without an
+      explicit commercial enterprise license executed by the author.
+   c. Any commercial deployment, distribution, carrier integration, or enterprise
+      licensing requires a separate, prior written contract executed by the
+      original author: Maheshwar Chandra Roy.
+
+3. TRADEMARK AND BRANDING PROTECTION:
+   a. The names "CallBridge", "CallBridge App", associated logos, graphic assets,
+      and identity are proprietary trademarks of Maheshwar Chandra Roy.
+   b. This license does NOT grant any right to use the official trademarks, logos,
+      or author identity in any derivative works, commercial promotions, or re-branded forks.
+
+4. MANDATORY ATTRIBUTION:
+   All copies, substantial portions, distributions, or forks of the Software must
+   retain the above copyright notice, author attribution to Maheshwar Chandra Roy (@0xmcr),
+   and this complete license agreement verbatim without modification.
+
+==============================================================================
+DISCLAIMER:
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+AUTHOR OR COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+==============================================================================
