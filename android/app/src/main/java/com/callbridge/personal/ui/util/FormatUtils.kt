@@ -493,20 +493,83 @@ object FormatUtils {
         CountryInfo("🇵🇬", "Papua New Guinea", "+675")
     )
 
+    data class SmsSegmentInfo(
+        val charCount: Int,
+        val segmentCount: Int,
+        val maxCharsForSegments: Int,
+        val remainingInSegment: Int,
+        val isUnicode: Boolean
+    )
+
+    /**
+     * Calculates real telecom SMS segment billing according to GSM 03.38 & UCS-2 standards.
+     * Single SMS: 160 GSM chars (or 70 Unicode chars).
+     * Multi-segment: 153 GSM chars per segment (or 67 Unicode chars per segment).
+     */
+    fun calculateSmsSegments(text: String): SmsSegmentInfo {
+        val charCount = text.length
+        if (charCount == 0) {
+            return SmsSegmentInfo(
+                charCount = 0,
+                segmentCount = 1,
+                maxCharsForSegments = 160,
+                remainingInSegment = 160,
+                isUnicode = false
+            )
+        }
+
+        // Check if text contains non-ASCII characters (UCS-2 / Unicode)
+        val isUnicode = text.any { it.code > 127 }
+        val singleLimit = if (isUnicode) 70 else 160
+        val multiLimit = if (isUnicode) 67 else 153
+
+        val segmentCount = if (charCount <= singleLimit) {
+            1
+        } else {
+            Math.ceil(charCount.toDouble() / multiLimit.toDouble()).toInt()
+        }
+
+        val maxAllowedForCurrentSegments = if (segmentCount == 1) singleLimit else segmentCount * multiLimit
+        val remaining = maxAllowedForCurrentSegments - charCount
+
+        return SmsSegmentInfo(
+            charCount = charCount,
+            segmentCount = segmentCount,
+            maxCharsForSegments = maxAllowedForCurrentSegments,
+            remainingInSegment = remaining.coerceAtLeast(0),
+            isUnicode = isUnicode
+        )
+    }
+
     /**
      * Resolves the country info based on prefix or explicit +code.
      */
     fun resolveCountryInfo(input: String): CountryInfo {
-        val trimmed = input.trim()
+        val trimmed = input.trim().replace("[^0-9+]".toRegex(), "")
+        if (trimmed.isEmpty()) return CountryInfo("🇺🇸", "United States", "+1")
+
         if (trimmed.startsWith("+")) {
-            val codeDigits = trimmed.removePrefix("+").take(4)
-            // Match descending by dial code length (e.g. +880 before +88, +1)
             val matched = SUPPORTED_COUNTRIES
                 .filter { trimmed.startsWith(it.dialCode) }
                 .maxByOrNull { it.dialCode.length }
             if (matched != null) return matched
+            val codeDigits = trimmed.removePrefix("+").take(4)
             return CountryInfo("🌐", "International", "+$codeDigits")
         }
+
+        // Input without '+': check if it matches an international country code (e.g. 880..., 44..., 91...)
+        val withPlus = "+$trimmed"
+        val matchedDirect = SUPPORTED_COUNTRIES
+            .filter { it.dialCode != "+1" && withPlus.startsWith(it.dialCode) }
+            .maxByOrNull { it.dialCode.length }
+        if (matchedDirect != null) return matchedDirect
+
+        // If it starts with 1 and is 11 digits (e.g. 12025550143)
+        if (trimmed.startsWith("1") && trimmed.length == 11) {
+            return CountryInfo("🇺🇸", "United States", "+1")
+        }
+
+        // Standard 10-digit US local number
         return CountryInfo("🇺🇸", "United States", "+1")
     }
 

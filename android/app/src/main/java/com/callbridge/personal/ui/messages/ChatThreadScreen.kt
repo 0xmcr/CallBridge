@@ -29,7 +29,10 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Notes
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +41,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -64,11 +68,21 @@ import com.callbridge.personal.ui.theme.ThemeManager
 import com.callbridge.personal.ui.util.FormatUtils
 import kotlinx.coroutines.launch
 
-// Apple iMessage Design Tokens
-private val AppleBlue = Color(0xFF007AFF)
-private val AppleBlueGradient = listOf(Color(0xFF007AFF), Color(0xFF0066D6))
-private val AppleIncomingDark = Color(0xFF26252A)
-private val AppleIncomingLight = Color(0xFFE9E9EB)
+// CallBridge Telecom Color Tokens
+private val CallBridgeBlue = Color(0xFF007AFF)
+private val CallBridgeBlueGradient = listOf(Color(0xFF007AFF), Color(0xFF0066D6))
+private val CallBridgeIncomingDark = Color(0xFF26252A)
+private val CallBridgeIncomingLight = Color(0xFFE9E9EB)
+private val SegmentWarningColor = Color(0xFFFF9500)
+
+val QuickSmsTemplates = listOf(
+    "Please call me back when you're free.",
+    "Hi, I'm reaching out to follow up on our discussion.",
+    "I'm currently in a meeting, will message you shortly.",
+    "Received your message, thank you!",
+    "On my way right now, will arrive soon.",
+    "Could you please share the details?"
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,15 +100,79 @@ fun ChatThreadScreen(
 
     var inputText by remember { mutableStateOf("") }
     var isSending by remember { mutableStateOf(false) }
+    var showTemplateDialog by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
+
+    val smsSegments = remember(inputText) {
+        FormatUtils.calculateSmsSegments(inputText)
+    }
 
     // Scroll to bottom whenever messages update
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
         }
+    }
+
+    // Quick Templates Dialog
+    if (showTemplateDialog) {
+        AlertDialog(
+            onDismissRequest = { showTemplateDialog = false },
+            shape = RoundedCornerShape(20.dp),
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Filled.Notes,
+                        contentDescription = null,
+                        tint = CallBridgeBlue,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Quick SMS Templates", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Standard GSM SMS is limited to 160 characters per segment. Pick a quick template to send instantly:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        items(QuickSmsTemplates) { template ->
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable {
+                                        inputText = template
+                                        showTemplateDialog = false
+                                    },
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            ) {
+                                Text(
+                                    text = template,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.padding(12.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showTemplateDialog = false }) {
+                    Text("Close")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -106,7 +184,7 @@ fun ChatThreadScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        // Apple Style Avatar
+                        // Dynamic Country Avatar
                         Box(
                             modifier = Modifier
                                 .size(38.dp)
@@ -126,7 +204,7 @@ fun ChatThreadScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "iMessage • ${country.name}",
+                                text = "CallBridge SMS • ${country.name}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -171,7 +249,7 @@ fun ChatThreadScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Apple Date & Encryption Header Banner
+            // CallBridge Gateway Header Banner
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -180,7 +258,7 @@ fun ChatThreadScreen(
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
             ) {
                 Text(
-                    text = "Text Message • SMS via Twilio ($callerId)",
+                    text = "Encrypted SMS via CallBridge Gateway • Twilio ($callerId)",
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -198,11 +276,11 @@ fun ChatThreadScreen(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 items(messages, key = { it.id }) { msg ->
-                    AppleMessageBubble(message = msg)
+                    CallBridgeMessageBubble(message = msg)
                 }
             }
 
-            // Apple Style Bottom Input Bar (Protected against Navigation Insets)
+            // Bottom Input Bar with Real-Time Character & Segment Counter
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -215,86 +293,120 @@ fun ChatThreadScreen(
                     MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
                 )
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Apple Style + Attachment Button
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable {
-                                // Insert quick predefined template
-                                if (inputText.isBlank()) {
-                                    inputText = "Hi, call me back when you're free."
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    // Real-Time Segment & Character Counter
+                    if (inputText.isNotEmpty()) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 2.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (smsSegments.isUnicode) "Unicode UCS-2 (70 char limit)" else "Standard GSM (160 char limit)",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (smsSegments.segmentCount > 1) SegmentWarningColor.copy(alpha = 0.15f) else CallBridgeBlue.copy(alpha = 0.12f)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = if (smsSegments.segmentCount == 1)
+                                            "${smsSegments.charCount} / ${smsSegments.maxCharsForSegments} • 1 SMS"
+                                        else
+                                            "${smsSegments.charCount} chars • ${smsSegments.segmentCount} SMS Segments",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (smsSegments.segmentCount > 1) SegmentWarningColor else CallBridgeBlue
+                                    )
                                 }
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = "Templates / Attachments",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
-                        )
+                            }
+                        }
                     }
 
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    // Apple Style Pill Input Field
-                    OutlinedTextField(
-                        value = inputText,
-                        onValueChange = { inputText = it },
-                        placeholder = {
-                            Text(
-                                text = "iMessage • SMS",
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                            )
-                        },
-                        modifier = Modifier.weight(1f),
-                        maxLines = 4,
-                        shape = RoundedCornerShape(22.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AppleBlue,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    // Apple Style Circular Up-Arrow Send Button
-                    val canSend = inputText.isNotBlank() && !isSending
-                    Box(
+                    Row(
                         modifier = Modifier
-                            .size(38.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (canSend) AppleBlue else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-                            )
-                            .clickable(enabled = canSend) {
-                                isSending = true
-                                val text = inputText.trim()
-                                inputText = ""
-                                coroutineScope.launch {
-                                    messagesRepository.sendSms(backendUrl, recipientAddress, text)
-                                    isSending = false
-                                }
-                            },
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Send Message",
-                            tint = if (canSend) Color.White else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                            modifier = Modifier.size(18.dp)
+                        // Quick Templates Button
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .clickable { showTemplateDialog = true },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Add,
+                                contentDescription = "Quick Templates",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // CallBridge Pill Input Field
+                        OutlinedTextField(
+                            value = inputText,
+                            onValueChange = { inputText = it },
+                            placeholder = {
+                                Text(
+                                    text = "CallBridge SMS...",
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                )
+                            },
+                            modifier = Modifier.weight(1f),
+                            maxLines = 4,
+                            shape = RoundedCornerShape(22.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = CallBridgeBlue,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                            )
                         )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // Send Button
+                        val canSend = inputText.isNotBlank() && !isSending
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (canSend) CallBridgeBlue else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                                )
+                                .clickable(enabled = canSend) {
+                                    isSending = true
+                                    val text = inputText.trim()
+                                    inputText = ""
+                                    coroutineScope.launch {
+                                        messagesRepository.sendSms(backendUrl, recipientAddress, text)
+                                        isSending = false
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Send,
+                                contentDescription = "Send Message",
+                                tint = if (canSend) Color.White else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -303,7 +415,7 @@ fun ChatThreadScreen(
 }
 
 @Composable
-private fun AppleMessageBubble(message: MessageEntity) {
+private fun CallBridgeMessageBubble(message: MessageEntity) {
     val isOutbound = !message.isIncoming
     val isDark = isSystemInDarkTheme()
 
@@ -326,11 +438,11 @@ private fun AppleMessageBubble(message: MessageEntity) {
                 .then(
                     if (isOutbound) {
                         Modifier.background(
-                            Brush.verticalGradient(AppleBlueGradient)
+                            Brush.verticalGradient(CallBridgeBlueGradient)
                         )
                     } else {
                         Modifier.background(
-                            if (isDark) AppleIncomingDark else AppleIncomingLight
+                            if (isDark) CallBridgeIncomingDark else CallBridgeIncomingLight
                         )
                     }
                 )
@@ -345,7 +457,7 @@ private fun AppleMessageBubble(message: MessageEntity) {
 
         Spacer(modifier = Modifier.height(2.dp))
 
-        // Receipt Status (Apple "Delivered" or Timestamp)
+        // Receipt Status (Delivered or Timestamp)
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(horizontal = 4.dp)
@@ -361,7 +473,7 @@ private fun AppleMessageBubble(message: MessageEntity) {
                 Text(
                     text = "• Delivered",
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = AppleBlue.copy(alpha = 0.85f),
+                    color = CallBridgeBlue.copy(alpha = 0.85f),
                     fontWeight = FontWeight.Medium
                 )
             }

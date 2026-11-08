@@ -166,7 +166,7 @@ fun MessagesScreen(
                         value = newBody,
                         onValueChange = { newBody = it },
                         label = { Text("Message") },
-                        placeholder = { Text("iMessage / SMS text...") },
+                        placeholder = { Text("CallBridge SMS text...") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
                         minLines = 3,
