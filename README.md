@@ -17,7 +17,7 @@
 
 <br/>
 
-**[📖 Self-Hosting Guide](USAGE.md)** • **[🤝 Contributing Guidelines](CONTRIBUTING.md)** • **[🔒 Security Policy](SECURITY.md)** • **[📜 License](LICENSE)**
+**[🇺🇸 English](README.md)** • **[🇧🇩 বাংলা সংস্করণ](README.bn.md)** • **[🤝 Contributing Guidelines](CONTRIBUTING.md)** • **[🔒 Security Policy](SECURITY.md)** • **[📜 License](LICENSE)**
 
 </div>
 
@@ -128,7 +128,7 @@ CallBridge/
 │   ├── railway.json                 # 1-Click Deploy template for Railway
 │   └── Dockerfile                   # Production containerization
 ├── docs/                            # Architecture specifications & diagrams
-├── USAGE.md                         # Self-hosting and deployment walkthrough
+├── README.bn.md                     # বাংলা ডকুমেন্টেশন (Bengali Documentation)
 ├── SECURITY.md                      # Vulnerability reporting and security guarantees
 ├── CONTRIBUTING.md                  # Contributor workflow and standards
 └── LICENSE                          # MIT License (© 2026 Maheshwar Chandra Roy)
@@ -144,8 +144,8 @@ git clone https://github.com/0xmcr/CallBridge.git
 cd CallBridge
 ```
 
-### 2. Deploy Backend Gateway
-Deploy your backend in 2 minutes for free on **[Render](USAGE.md#option-a-1-click-deploy-on-render-recommended)**, **[Railway](USAGE.md#option-b-deploy-on-railway)**, or run locally:
+### 2. Run Backend Gateway
+Run locally or deploy via Docker / Cloud:
 ```bash
 cd backend
 cp .env.example .env
@@ -161,8 +161,6 @@ cd android
 ```
 Pre-compiled APKs are also available in the repository root:
 - **`CallBridge-v1.0.9-debug.apk`** (Latest production build)
-
-For detailed step-by-step setup with Twilio account creation, buying virtual numbers, and webhook wiring, check **[USAGE.md](USAGE.md)**.
 
 ---
 
