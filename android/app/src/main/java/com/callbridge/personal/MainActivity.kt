@@ -44,6 +44,8 @@ import com.callbridge.personal.ui.dashboard.DashboardScreen
 import com.callbridge.personal.ui.dialpad.DialPadScreen
 import com.callbridge.personal.ui.history.CallDetailScreen
 import com.callbridge.personal.ui.history.CallHistoryScreen
+import com.callbridge.personal.ui.onboarding.OnboardingScreen
+import com.callbridge.personal.ui.onboarding.SplashScreen
 import com.callbridge.personal.ui.settings.SettingsScreen
 import com.callbridge.personal.ui.theme.CallBridgeTheme
 import com.callbridge.personal.ui.theme.ThemeManager
@@ -173,6 +175,7 @@ fun MainApp(
     val isHeld by callManager.isHeld.collectAsState()
     val activeCallNote by callManager.activeCallNote.collectAsState()
     val isDialSoundEnabled by themeManager.dialSoundEnabled.collectAsState()
+    val hasCompletedOnboarding by themeManager.hasCompletedOnboarding.collectAsState()
 
     // Show BottomBar only on primary top-level tabs when not in an active call
     val isBottomBarVisible = currentRoute in listOf(
@@ -210,11 +213,36 @@ fun MainApp(
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Dashboard.route,
+            startDestination = Screen.Splash.route,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(bottom = paddingValues.calculateBottomPadding())
         ) {
+            // Splash Screen
+            composable(Screen.Splash.route) {
+                SplashScreen(
+                    onSplashFinished = {
+                        val target = if (hasCompletedOnboarding) Screen.Dashboard.route else Screen.Onboarding.route
+                        navController.navigate(target) {
+                            popUpTo(Screen.Splash.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            // Onboarding Walkthrough (Pure local, No sign-in)
+            composable(Screen.Onboarding.route) {
+                OnboardingScreen(
+                    onGetStarted = {
+                        themeManager.setHasCompletedOnboarding(true)
+                        onCheckAudioPermission {
+                            navController.navigate(Screen.Dashboard.route) {
+                                popUpTo(Screen.Onboarding.route) { inclusive = true }
+                            }
+                        }
+                    }
+                )
+            }
             // Dashboard
             composable(Screen.Dashboard.route) {
                 DashboardScreen(

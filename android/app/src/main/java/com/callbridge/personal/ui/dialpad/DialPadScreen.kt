@@ -3,6 +3,7 @@ package com.callbridge.personal.ui.dialpad
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -96,9 +98,41 @@ fun DialPadScreen(
     }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
-                title = { Text("Dial Pad", fontWeight = FontWeight.SemiBold) },
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth().padding(end = 12.dp)
+                    ) {
+                        Text("Dial Pad", fontWeight = FontWeight.Bold)
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = CallGreen.copy(alpha = 0.15f)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .clip(CircleShape)
+                                        .background(CallGreen)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "USA Direct",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = CallGreen
+                                )
+                            }
+                        }
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -117,7 +151,7 @@ fun DialPadScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 20.dp, vertical = 8.dp),
+                .padding(horizontal = 20.dp, vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
@@ -126,22 +160,62 @@ fun DialPadScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 12.dp)
+                    .padding(vertical = 8.dp)
             ) {
-                // Large Formatted Telephone Number Display
-                Text(
-                    text = validation.formatted,
-                    style = MaterialTheme.typography.headlineLarge.copy(
-                        fontSize = if (nationalDigits.length > 7) 32.sp else 36.sp,
-                        letterSpacing = 1.sp
-                    ),
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1
-                )
+                // Modern curved input pill with USA flag
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // USA Flag Badge
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                            ) {
+                                Text(text = "🇺🇸", fontSize = 16.sp)
+                                Spacer(modifier = Modifier.width(5.dp))
+                                Text(
+                                    text = "+1",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                        // Formatted Number / Placeholder
+                        Text(
+                            text = if (nationalDigits.isEmpty()) "Enter phone number..." else validation.formatted,
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontSize = if (nationalDigits.length > 7) 22.sp else 24.sp
+                            ),
+                            fontWeight = FontWeight.Bold,
+                            color = if (nationalDigits.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f) else MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.End,
+                            maxLines = 1,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 12.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // Real-time Validity Indicator Pill
                 Surface(
@@ -154,7 +228,7 @@ fun DialPadScreen(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                     ) {
                         if (validation.isValid) {
                             Icon(

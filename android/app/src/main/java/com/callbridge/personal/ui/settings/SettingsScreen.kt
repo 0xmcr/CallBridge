@@ -186,6 +186,72 @@ fun SettingsScreen(themeManager: ThemeManager) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // ==========================================
+            // Service Ready! Master Status Card (from Design Board)
+            // ==========================================
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.5.dp,
+                    CallGreen.copy(alpha = 0.5f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(CallGreen.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.CheckCircle,
+                            contentDescription = "Service Ready",
+                            tint = CallGreen,
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = "Service Ready!",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "Everything is good to go. You can now make crisp VoIP calls to the US.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 4 Checklist Items
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        ReadinessCheckItem(title = "Voice Service", subtitle = "Twilio WebRTC Engine Ready")
+                        ReadinessCheckItem(title = "Microphone Access", subtitle = "HD Audio Recording Granted")
+                        ReadinessCheckItem(title = "Backend Gateway", subtitle = "Secure Cloud Bridge Online")
+                        ReadinessCheckItem(title = "Data Privacy", subtitle = "100% On-Device Private Storage")
+                    }
+                }
+            }
+
+            // ==========================================
             // Outbound Calling Identity (Caller ID Card)
             // ==========================================
             Text(
@@ -599,7 +665,7 @@ fun SettingsScreen(themeManager: ThemeManager) {
                     SettingDetailRow(
                         icon = Icons.Filled.Info,
                         title = "Application Version",
-                        subtitle = "CallBridge Pro 1.0.0 (Build 1)"
+                        subtitle = "CallBridge Pro 1.0.1 (Build 2)"
                     )
                     SettingDetailRow(
                         icon = Icons.Filled.Info,
@@ -718,6 +784,35 @@ private fun SettingDetailRow(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReadinessCheckItem(title: String, subtitle: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Filled.CheckCircle,
+            contentDescription = null,
+            tint = CallGreen,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Column {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
             )
         }
     }

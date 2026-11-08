@@ -1,6 +1,8 @@
 package com.callbridge.personal.navigation
 
 sealed class Screen(val route: String) {
+    data object Splash : Screen("splash")
+    data object Onboarding : Screen("onboarding")
     data object Dashboard : Screen("dashboard")
     data object DialPad : Screen("dialpad?initialNumber={initialNumber}") {
         fun createRoute(initialNumber: String = ""): String {

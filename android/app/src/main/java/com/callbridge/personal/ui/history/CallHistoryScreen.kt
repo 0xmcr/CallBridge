@@ -27,6 +27,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -47,12 +49,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.callbridge.personal.data.local.entity.CallHistoryEntity
 import com.callbridge.personal.data.repository.CallHistoryRepository
 import com.callbridge.personal.ui.theme.CallGreen
 import com.callbridge.personal.ui.theme.CallRed
 import com.callbridge.personal.ui.util.FormatUtils
 import kotlinx.coroutines.launch
+import java.util.Calendar
+
+private enum class HistoryFilter {
+    ALL, OUTGOING, MISSED
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,13 +71,55 @@ fun CallHistoryScreen(
 ) {
     val scope = rememberCoroutineScope()
     var showClearDialog by remember { mutableStateOf(false) }
+    var selectedFilter by remember { mutableStateOf(HistoryFilter.ALL) }
 
-    val historyList by callHistoryRepository.allHistory.collectAsState(initial = emptyList())
+    val rawHistoryList by callHistoryRepository.allHistory.collectAsState(initial = emptyList())
+
+    // Filter by tab
+    val filteredList = remember(rawHistoryList, selectedFilter) {
+        when (selectedFilter) {
+            HistoryFilter.ALL -> rawHistoryList
+            HistoryFilter.OUTGOING -> rawHistoryList.filter { it.status.equals("COMPLETED", ignoreCase = true) }
+            HistoryFilter.MISSED -> rawHistoryList.filter { !it.status.equals("COMPLETED", ignoreCase = true) }
+        }
+    }
+
+    // Group by Date: Today, Yesterday, Older
+    val groupedHistory = remember(filteredList) {
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        val startOfToday = cal.timeInMillis
+
+        cal.add(Calendar.DAY_OF_YEAR, -1)
+        val startOfYesterday = cal.timeInMillis
+
+        val todayList = mutableListOf<CallHistoryEntity>()
+        val yesterdayList = mutableListOf<CallHistoryEntity>()
+        val olderList = mutableListOf<CallHistoryEntity>()
+
+        filteredList.forEach { item ->
+            val timestamp = item.startedAt ?: item.createdAt
+            when {
+                timestamp >= startOfToday -> todayList.add(item)
+                timestamp >= startOfYesterday -> yesterdayList.add(item)
+                else -> olderList.add(item)
+            }
+        }
+
+        listOf(
+            "Today" to todayList,
+            "Yesterday" to yesterdayList,
+            "Older" to olderList
+        ).filter { it.second.isNotEmpty() }
+    }
 
     if (showClearDialog) {
         AlertDialog(
             onDismissRequest = { showClearDialog = false },
-            title = { Text("Clear Call History") },
+            title = { Text("Clear Call History", fontWeight = FontWeight.Bold) },
             text = { Text("Are you sure you want to delete all call logs? This cannot be undone.") },
             confirmButton = {
                 TextButton(
@@ -80,7 +130,7 @@ fun CallHistoryScreen(
                         }
                     }
                 ) {
-                    Text("Clear All", color = CallRed)
+                    Text("Clear All", color = CallRed, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -95,9 +145,9 @@ fun CallHistoryScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
-                title = { Text("Call History") },
+                title = { Text("Call History", fontWeight = FontWeight.Bold) },
                 actions = {
-                    if (historyList.isNotEmpty()) {
+                    if (rawHistoryList.isNotEmpty()) {
                         IconButton(onClick = { showClearDialog = true }) {
                             Icon(
                                 imageVector = Icons.Filled.DeleteSweep,
@@ -109,55 +159,115 @@ fun CallHistoryScreen(
             )
         }
     ) { paddingValues ->
-        if (historyList.isEmpty()) {
-            Box(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp)
+        ) {
+            // Filter Pills Row
+            Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Call,
-                        contentDescription = null,
-                        modifier = Modifier.size(56.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                FilterChip(
+                    selected = selectedFilter == HistoryFilter.ALL,
+                    onClick = { selectedFilter = HistoryFilter.ALL },
+                    label = { Text("All", fontWeight = if (selectedFilter == HistoryFilter.ALL) FontWeight.Bold else FontWeight.Normal) },
+                    shape = RoundedCornerShape(20.dp),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "No calls yet",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                FilterChip(
+                    selected = selectedFilter == HistoryFilter.OUTGOING,
+                    onClick = { selectedFilter = HistoryFilter.OUTGOING },
+                    label = { Text("Outgoing", fontWeight = if (selectedFilter == HistoryFilter.OUTGOING) FontWeight.Bold else FontWeight.Normal) },
+                    shape = RoundedCornerShape(20.dp),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Calls you make will be recorded here",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+
+                FilterChip(
+                    selected = selectedFilter == HistoryFilter.MISSED,
+                    onClick = { selectedFilter = HistoryFilter.MISSED },
+                    label = { Text("Missed", fontWeight = if (selectedFilter == HistoryFilter.MISSED) FontWeight.Bold else FontWeight.Normal) },
+                    shape = RoundedCornerShape(20.dp),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                     )
-                }
+                )
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(
-                    items = historyList,
-                    key = { it.id }
-                ) { item ->
-                    CallHistoryItemCard(
-                        item = item,
-                        onClick = { onNavigateToDetail(item.id) },
-                        onCallClick = { onCallNumber(item.destinationE164) }
-                    )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            if (filteredList.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Call,
+                            contentDescription = null,
+                            modifier = Modifier.size(56.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = if (rawHistoryList.isEmpty()) "No calls yet" else "No matching calls",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Calls you make to the US will appear here",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    groupedHistory.forEach { (sectionTitle, itemsInSection) ->
+                        item {
+                            Text(
+                                text = sectionTitle,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                            )
+                        }
+
+                        items(
+                            items = itemsInSection,
+                            key = { it.id }
+                        ) { item ->
+                            CallHistoryItemCard(
+                                item = item,
+                                onClick = { onNavigateToDetail(item.id) },
+                                onCallClick = { onCallNumber(item.destinationE164) }
+                            )
+                        }
+                    }
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
             }
         }
@@ -179,27 +289,27 @@ fun CallHistoryItemCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+            MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
         )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Outcome Icon
+            // Direction / Status Avatar Icon
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(42.dp)
                     .clip(CircleShape)
-                    .background(statusColor.copy(alpha = 0.12f)),
+                    .background(statusColor.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -210,16 +320,17 @@ fun CallHistoryItemCard(
                 )
             }
 
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
             Column(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = item.destinationE164,
+                    text = FormatUtils.formatNanpDisplay(item.destinationE164),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
+
                 val loc = FormatUtils.getAreaCodeLocation(item.destinationE164)
                 if (!loc.isNullOrBlank()) {
                     Text(
@@ -229,6 +340,7 @@ fun CallHistoryItemCard(
                         fontWeight = FontWeight.Medium
                     )
                 }
+
                 if (!item.note.isNullOrBlank()) {
                     Text(
                         text = "📝 ${item.note}",
@@ -237,44 +349,51 @@ fun CallHistoryItemCard(
                         maxLines = 1
                     )
                 }
-                Spacer(modifier = Modifier.height(2.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(4.dp),
-                        color = statusColor.copy(alpha = 0.12f)
-                    ) {
-                        Text(
-                            text = item.status.uppercase(),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = statusColor,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
-                    if (isSuccess && (item.durationSeconds ?: 0) > 0) {
-                        Text(
-                            text = "• ${FormatUtils.formatDuration(item.durationSeconds)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = FormatUtils.formatTimestamp(timestamp),
+                    text = "${if (isSuccess) "Outgoing" else "Missed"} • ${FormatUtils.formatTimestamp(timestamp)}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
                 )
             }
 
-            // Quick Call-back
+            // Duration Badge on the Right (e.g. ↗ 2m 36s)
+            if (isSuccess && (item.durationSeconds ?: 0) > 0) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = CallGreen.copy(alpha = 0.12f),
+                    modifier = Modifier.padding(end = 6.dp)
+                ) {
+                    Text(
+                        text = "↗ ${FormatUtils.formatDuration(item.durationSeconds)}",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                        fontWeight = FontWeight.Bold,
+                        color = CallGreen,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                    )
+                }
+            } else if (!isSuccess) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = CallRed.copy(alpha = 0.12f),
+                    modifier = Modifier.padding(end = 6.dp)
+                ) {
+                    Text(
+                        text = "Missed",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                        fontWeight = FontWeight.Bold,
+                        color = CallRed,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                    )
+                }
+            }
+
+            // Quick Call-back Button
             IconButton(
                 onClick = onCallClick,
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(38.dp)
                     .clip(CircleShape)
                     .background(CallGreen.copy(alpha = 0.12f))
             ) {
@@ -282,7 +401,7 @@ fun CallHistoryItemCard(
                     imageVector = Icons.Filled.Call,
                     contentDescription = "Call ${item.destinationE164}",
                     tint = CallGreen,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
