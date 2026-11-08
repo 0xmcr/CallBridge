@@ -31,8 +31,10 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -40,6 +42,7 @@ import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -117,48 +120,82 @@ fun DialPadScreen(
     }
 
     if (showCountryPicker) {
+        var countrySearch by remember { mutableStateOf("") }
+        val filteredCountries = remember(countrySearch) {
+            if (countrySearch.isBlank()) FormatUtils.SUPPORTED_COUNTRIES
+            else FormatUtils.SUPPORTED_COUNTRIES.filter {
+                it.name.contains(countrySearch.trim(), ignoreCase = true) ||
+                        it.dialCode.contains(countrySearch.trim())
+            }
+        }
+
         AlertDialog(
             onDismissRequest = { showCountryPicker = false },
-            title = { Text("Select Destination Country") },
+            title = {
+                Text("Select Country (${FormatUtils.SUPPORTED_COUNTRIES.size} Supported)")
+            },
             text = {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(340.dp)
-                ) {
-                    items(FormatUtils.SUPPORTED_COUNTRIES) { country ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    nationalDigits = country.dialCode
-                                    showCountryPicker = false
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = countrySearch,
+                        onValueChange = { countrySearch = it },
+                        placeholder = { Text("Search country or code...") },
+                        leadingIcon = {
+                            Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.size(18.dp))
+                        },
+                        trailingIcon = {
+                            if (countrySearch.isNotEmpty()) {
+                                IconButton(onClick = { countrySearch = "" }) {
+                                    Icon(Icons.Filled.Clear, contentDescription = "Clear", modifier = Modifier.size(16.dp))
                                 }
-                                .padding(vertical = 10.dp, horizontal = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(text = country.flag, fontSize = 22.sp)
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(320.dp)
+                    ) {
+                        items(filteredCountries, key = { it.name + it.dialCode }) { country ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        nationalDigits = country.dialCode
+                                        showCountryPicker = false
+                                    }
+                                    .padding(vertical = 10.dp, horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(text = country.flag, fontSize = 22.sp)
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = country.name,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
                                 Text(
-                                    text = country.name,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.SemiBold
+                                    text = country.dialCode,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
-                            Text(
-                                text = country.dialCode,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
                         }
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { showCountryPicker = false }) {
-                    Text("Cancel")
+                    Text("Close")
                 }
             }
         )
