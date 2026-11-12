@@ -55,6 +55,10 @@ import com.callbridge.personal.ui.onboarding.SplashScreen
 import com.callbridge.personal.ui.settings.SettingsScreen
 import com.callbridge.personal.ui.theme.CallBridgeTheme
 import com.callbridge.personal.ui.theme.ThemeManager
+import com.callbridge.personal.ui.i18n.AppStrings
+import com.callbridge.personal.ui.i18n.LocalAppStrings
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 
 class MainActivity : ComponentActivity() {
 
@@ -186,6 +190,7 @@ fun MainApp(
     val isDialSoundEnabled by themeManager.dialSoundEnabled.collectAsState()
     val hasCompletedOnboarding by themeManager.hasCompletedOnboarding.collectAsState()
     val appLanguage by themeManager.appLanguage.collectAsState()
+    val strings = remember(appLanguage) { AppStrings.forLanguage(appLanguage) }
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -214,6 +219,7 @@ fun MainApp(
         }
     }
 
+    CompositionLocalProvider(LocalAppStrings provides strings) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -541,5 +547,6 @@ fun MainApp(
                 callManager.rejectIncomingCall()
             }
         )
+    }
     }
 }

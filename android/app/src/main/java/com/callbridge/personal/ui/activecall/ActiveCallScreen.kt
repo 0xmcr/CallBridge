@@ -61,6 +61,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.callbridge.personal.calling.CallUiState
+import com.callbridge.personal.ui.i18n.LocalAppStrings
 import com.callbridge.personal.ui.theme.CallGreen
 import com.callbridge.personal.ui.theme.CallRed
 import com.callbridge.personal.ui.util.DtmfPlayer
@@ -88,6 +89,7 @@ fun ActiveCallScreen(
     var showNotesSheet by remember { mutableStateOf(false) }
     var enteredDtmfDigits by remember { mutableStateOf("") }
     var noteText by remember(activeCallNote) { mutableStateOf(activeCallNote) }
+    val strings = LocalAppStrings.current
 
     // Resolve location of US destination
     val locationHint = remember(destination) {
@@ -149,12 +151,12 @@ fun ActiveCallScreen(
         isHeld -> "Call On Hold"
         callState is CallUiState.Idle -> "Idle"
         callState is CallUiState.RequestingPermission -> "Requesting Audio Permission..."
-        callState is CallUiState.FetchingToken -> "Authenticating Twilio VoIP..."
-        callState is CallUiState.Connecting -> "Connecting to US Telecom..."
+        callState is CallUiState.FetchingToken -> strings.callAuthenticating
+        callState is CallUiState.Connecting -> strings.callConnecting
         callState is CallUiState.Ringing -> "Ringing..."
-        callState is CallUiState.Connected -> "Connected (HD PSTN Voice)"
+        callState is CallUiState.Connected -> strings.callConnected
         callState is CallUiState.Ending -> "Ending Call..."
-        callState is CallUiState.Ended -> "Call Ended (${callState.durationSeconds}s)"
+        callState is CallUiState.Ended -> "${strings.callEnded} (${callState.durationSeconds}s)"
         callState is CallUiState.Failed -> "Call Failed: ${callState.userMessage}"
         else -> "Calling..."
     }
@@ -224,7 +226,7 @@ fun ActiveCallScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showInCallKeypad = false }) {
-                    Text("Close")
+                    Text(strings.actionClose)
                 }
             }
         )
@@ -458,7 +460,7 @@ fun ActiveCallScreen(
                     // 1. Mute Button
                     CallControlButton(
                         icon = if (isMuted) Icons.Filled.MicOff else Icons.Filled.Mic,
-                        label = if (isMuted) "Unmute" else "Mute",
+                        label = strings.callMute,
                         isActive = isMuted,
                         enabled = isCallActive,
                         onClick = onToggleMute
@@ -467,7 +469,7 @@ fun ActiveCallScreen(
                     // 2. In-Call Keypad (DTMF for IVR)
                     CallControlButton(
                         icon = Icons.Filled.Dialpad,
-                        label = "Keypad",
+                        label = strings.callKeypad,
                         isActive = showInCallKeypad,
                         enabled = isCallActive,
                         onClick = { showInCallKeypad = true }
@@ -476,7 +478,7 @@ fun ActiveCallScreen(
                     // 3. Speakerphone
                     CallControlButton(
                         icon = Icons.Filled.VolumeUp,
-                        label = "Speaker",
+                        label = strings.callSpeaker,
                         isActive = isSpeakerOn,
                         enabled = isCallActive || callState is CallUiState.Ringing,
                         onClick = onToggleSpeaker
@@ -485,7 +487,7 @@ fun ActiveCallScreen(
                     // 4. In-Call Quick Note
                     CallControlButton(
                         icon = Icons.Filled.EditNote,
-                        label = if (noteText.isNotEmpty()) "Notes (1)" else "Notes",
+                        label = if (noteText.isNotEmpty()) "${strings.callNotes} (1)" else strings.callNotes,
                         isActive = noteText.isNotEmpty(),
                         enabled = isCallActive,
                         onClick = { showNotesSheet = true }
@@ -502,7 +504,7 @@ fun ActiveCallScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.CallEnd,
-                        contentDescription = "End Call",
+                        contentDescription = strings.callEndButton,
                         modifier = Modifier.size(38.dp)
                     )
                 }

@@ -67,6 +67,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.callbridge.personal.data.repository.MessagesRepository
+import com.callbridge.personal.ui.i18n.LocalAppStrings
 import com.callbridge.personal.ui.theme.CallGreen
 import com.callbridge.personal.ui.theme.ThemeManager
 import com.callbridge.personal.ui.util.FormatUtils
@@ -86,6 +87,7 @@ fun MessagesScreen(
     val conversations by messagesRepository.getRecentConversations().collectAsState(initial = emptyList())
     val callerId by themeManager.callerId.collectAsState()
     val backendUrl by themeManager.backendUrl.collectAsState()
+    val strings = LocalAppStrings.current
     val coroutineScope = rememberCoroutineScope()
 
     var showNewMessageDialog by remember { mutableStateOf(false) }
@@ -133,7 +135,7 @@ fun MessagesScreen(
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "New Message",
+                        text = strings.actionNewMessage,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -200,7 +202,7 @@ fun MessagesScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showNewMessageDialog = false }) {
-                    Text("Cancel")
+                    Text(strings.actionCancel)
                 }
             }
         )
@@ -213,12 +215,12 @@ fun MessagesScreen(
                 title = {
                     Column {
                         Text(
-                            text = "Messages",
+                            text = strings.messagesTitle,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "CallBridge SMS Gateway",
+                            text = strings.messagesSubtitle,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -276,8 +278,8 @@ fun MessagesScreen(
                 modifier = Modifier
                     .navigationBarsPadding()
                     .padding(bottom = 8.dp),
-                icon = { Icon(Icons.Filled.Edit, contentDescription = "New Message") },
-                text = { Text("New Message", fontWeight = FontWeight.SemiBold) },
+                icon = { Icon(Icons.Filled.Edit, contentDescription = strings.actionNewMessage) },
+                text = { Text(strings.actionNewMessage, fontWeight = FontWeight.SemiBold) },
                 containerColor = CallBridgeBlue,
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp)
@@ -313,7 +315,7 @@ fun MessagesScreen(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text("Search messages or phone numbers...", fontSize = 14.sp) },
+                        placeholder = { Text(strings.messagesSearchPlaceholder, fontSize = 14.sp) },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
