@@ -63,6 +63,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.callbridge.personal.ui.i18n.LocalAppStrings
 import com.callbridge.personal.ui.theme.CallGreen
 import com.callbridge.personal.ui.theme.StatusWarning
 import com.callbridge.personal.ui.util.DtmfPlayer
@@ -78,6 +79,7 @@ fun DialPadScreen(
 ) {
     val haptic = LocalHapticFeedback.current
     val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+    val strings = LocalAppStrings.current
 
     // Internal state stores national or international digits (e.g. "+88017...", "2025550143")
     var nationalDigits by remember {
@@ -132,14 +134,14 @@ fun DialPadScreen(
         AlertDialog(
             onDismissRequest = { showCountryPicker = false },
             title = {
-                Text("Select Country (${FormatUtils.SUPPORTED_COUNTRIES.size} Supported)")
+                Text("${strings.dialpadSelectCountry} (${FormatUtils.SUPPORTED_COUNTRIES.size})")
             },
             text = {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = countrySearch,
                         onValueChange = { countrySearch = it },
-                        placeholder = { Text("Search country or code...") },
+                        placeholder = { Text(strings.dialpadSearchCountryPlaceholder) },
                         leadingIcon = {
                             Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.size(18.dp))
                         },
@@ -195,7 +197,7 @@ fun DialPadScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showCountryPicker = false }) {
-                    Text("Close")
+                    Text(strings.actionClose)
                 }
             }
         )
@@ -211,7 +213,7 @@ fun DialPadScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier.fillMaxWidth().padding(end = 12.dp)
                     ) {
-                        Text("Dial Pad", fontWeight = FontWeight.Bold)
+                        Text(strings.dialpadTitle, fontWeight = FontWeight.Bold)
                         Surface(
                             shape = RoundedCornerShape(16.dp),
                             color = CallGreen.copy(alpha = 0.15f)
@@ -228,7 +230,7 @@ fun DialPadScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "CallBridge Direct",
+                                    text = strings.dialpadDirectBadge,
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = CallGreen

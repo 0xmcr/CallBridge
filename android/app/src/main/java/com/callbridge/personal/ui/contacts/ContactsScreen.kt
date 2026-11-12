@@ -54,6 +54,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.callbridge.personal.data.local.entity.ContactEntity
 import com.callbridge.personal.data.repository.ContactsRepository
+import com.callbridge.personal.ui.i18n.LocalAppStrings
 import com.callbridge.personal.ui.theme.CallGreen
 import com.callbridge.personal.ui.util.FormatUtils
 
@@ -74,6 +75,7 @@ fun ContactsScreen(
     var showSearchBar by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(ContactTab.ALL) }
     var favoriteContactIds by remember { mutableStateOf(setOf<String>()) }
+    val strings = LocalAppStrings.current
 
     val allContacts by remember(searchQuery) {
         if (searchQuery.isBlank()) {
@@ -94,10 +96,10 @@ fun ContactsScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
-                title = { Text("Contacts", fontWeight = FontWeight.Bold) },
+                title = { Text(strings.tabContacts, fontWeight = FontWeight.Bold) },
                 actions = {
                     IconButton(onClick = { showSearchBar = !showSearchBar }) {
-                        Icon(Icons.Filled.Search, contentDescription = "Search contacts")
+                        Icon(Icons.Filled.Search, contentDescription = strings.actionSearch)
                     }
                     IconButton(onClick = onNavigateToAddContact) {
                         Icon(Icons.Filled.Add, contentDescription = "Add Contact")

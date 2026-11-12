@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.callbridge.personal.data.repository.CallHistoryRepository
 import com.callbridge.personal.ui.history.CallHistoryItemCard
+import com.callbridge.personal.ui.i18n.LocalAppStrings
 import com.callbridge.personal.ui.theme.CallGreen
 import com.callbridge.personal.ui.theme.ThemeManager
 
@@ -73,6 +74,7 @@ fun DashboardScreen(
     val accountBalance by themeManager.accountBalance.collectAsState()
     val accountStatus by themeManager.accountStatus.collectAsState()
     val callerId by themeManager.callerId.collectAsState()
+    val strings = LocalAppStrings.current
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -128,8 +130,8 @@ fun DashboardScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onNavigateToDialPad,
-                icon = { Icon(Icons.Filled.Dialpad, contentDescription = "Dial Pad") },
-                text = { Text("New Call") },
+                icon = { Icon(Icons.Filled.Dialpad, contentDescription = strings.dialpadTitle) },
+                text = { Text(strings.actionNewCall) },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             )
@@ -181,7 +183,7 @@ fun DashboardScreen(
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(
-                                    text = "Twilio Account Balance",
+                                    text = strings.dashboardBalanceTitle,
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -240,7 +242,7 @@ fun DashboardScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Active Caller ID (Worldwide Dialing)",
+                                    text = strings.dashboardActiveCallerId,
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.SemiBold,
                                     color = CallGreen
@@ -302,13 +304,13 @@ fun DashboardScreen(
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "SMS Hub",
+                                text = strings.messagesTitle,
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = "Twilio 2-Way Chat",
+                                text = strings.messagesSubtitle,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                             )
@@ -339,13 +341,13 @@ fun DashboardScreen(
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "Contacts",
+                                text = strings.tabContacts,
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = "Personal CRM",
+                                text = strings.dashboardContactsDesc,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                             )
@@ -361,14 +363,14 @@ fun DashboardScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Recent Calls",
+                        text = strings.dashboardRecentCalls,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     if (recentCalls.isNotEmpty()) {
                         TextButton(onClick = onNavigateToHistory) {
-                            Text("View All")
+                            Text(strings.dashboardViewAll)
                         }
                     }
                 }

@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.callbridge.personal.data.local.entity.CallHistoryEntity
 import com.callbridge.personal.data.repository.CallHistoryRepository
+import com.callbridge.personal.ui.i18n.LocalAppStrings
 import com.callbridge.personal.ui.theme.CallGreen
 import com.callbridge.personal.ui.theme.CallRed
 import com.callbridge.personal.ui.util.FormatUtils
@@ -72,6 +73,7 @@ fun CallHistoryScreen(
     val scope = rememberCoroutineScope()
     var showClearDialog by remember { mutableStateOf(false) }
     var selectedFilter by remember { mutableStateOf(HistoryFilter.ALL) }
+    val strings = LocalAppStrings.current
 
     val rawHistoryList by callHistoryRepository.allHistory.collectAsState(initial = emptyList())
 
@@ -135,7 +137,7 @@ fun CallHistoryScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showClearDialog = false }) {
-                    Text("Cancel")
+                    Text(strings.actionCancel)
                 }
             }
         )
@@ -145,7 +147,7 @@ fun CallHistoryScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
-                title = { Text("Call History", fontWeight = FontWeight.Bold) },
+                title = { Text(strings.tabHistory, fontWeight = FontWeight.Bold) },
                 actions = {
                     if (rawHistoryList.isNotEmpty()) {
                         IconButton(onClick = { showClearDialog = true }) {
@@ -186,7 +188,7 @@ fun CallHistoryScreen(
                 FilterChip(
                     selected = selectedFilter == HistoryFilter.OUTGOING,
                     onClick = { selectedFilter = HistoryFilter.OUTGOING },
-                    label = { Text("Outgoing", fontWeight = if (selectedFilter == HistoryFilter.OUTGOING) FontWeight.Bold else FontWeight.Normal) },
+                    label = { Text(strings.dashboardOutgoing, fontWeight = if (selectedFilter == HistoryFilter.OUTGOING) FontWeight.Bold else FontWeight.Normal) },
                     shape = RoundedCornerShape(20.dp),
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = MaterialTheme.colorScheme.primary,
@@ -197,7 +199,7 @@ fun CallHistoryScreen(
                 FilterChip(
                     selected = selectedFilter == HistoryFilter.MISSED,
                     onClick = { selectedFilter = HistoryFilter.MISSED },
-                    label = { Text("Missed", fontWeight = if (selectedFilter == HistoryFilter.MISSED) FontWeight.Bold else FontWeight.Normal) },
+                    label = { Text(strings.dashboardMissed, fontWeight = if (selectedFilter == HistoryFilter.MISSED) FontWeight.Bold else FontWeight.Normal) },
                     shape = RoundedCornerShape(20.dp),
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = MaterialTheme.colorScheme.primary,

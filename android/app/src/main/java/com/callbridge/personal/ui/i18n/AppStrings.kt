@@ -1,5 +1,6 @@
 package com.callbridge.personal.ui.i18n
 
+import androidx.compose.runtime.staticCompositionLocalOf
 import com.callbridge.personal.ui.theme.AppLanguage
 
 data class I18nStrings(
@@ -578,4 +579,8 @@ object AppStrings {
         AppLanguage.RUSSIAN -> Russian
         AppLanguage.CHINESE -> Chinese
     }
+}
+
+val LocalAppStrings = staticCompositionLocalOf {
+    AppStrings.forLanguage(AppLanguage.ENGLISH)
 }

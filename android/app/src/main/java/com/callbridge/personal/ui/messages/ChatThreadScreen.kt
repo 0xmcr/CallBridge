@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.callbridge.personal.data.local.entity.MessageEntity
 import com.callbridge.personal.data.repository.MessagesRepository
+import com.callbridge.personal.ui.i18n.LocalAppStrings
 import com.callbridge.personal.ui.theme.CallGreen
 import com.callbridge.personal.ui.theme.ThemeManager
 import com.callbridge.personal.ui.util.FormatUtils
@@ -97,6 +98,7 @@ fun ChatThreadScreen(
     val messages by messagesRepository.getMessagesForAddress(recipientAddress).collectAsState(initial = emptyList())
     val backendUrl by themeManager.backendUrl.collectAsState()
     val callerId by themeManager.callerId.collectAsState()
+    val strings = LocalAppStrings.current
     val country = remember(recipientAddress) { FormatUtils.resolveCountryInfo(recipientAddress) }
 
     var inputText by remember { mutableStateOf("") }
@@ -131,7 +133,7 @@ fun ChatThreadScreen(
                         modifier = Modifier.size(22.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Quick SMS Templates", fontWeight = FontWeight.Bold)
+                    Text(strings.messagesQuickTemplates, fontWeight = FontWeight.Bold)
                 }
             },
             text = {
@@ -170,7 +172,7 @@ fun ChatThreadScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showTemplateDialog = false }) {
-                    Text("Close")
+                    Text(strings.actionClose)
                 }
             }
         )
@@ -369,7 +371,7 @@ fun ChatThreadScreen(
                             onValueChange = { inputText = it },
                             placeholder = {
                                 Text(
-                                    text = "CallBridge SMS...",
+                                    text = strings.messagesInputPlaceholder,
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                 )

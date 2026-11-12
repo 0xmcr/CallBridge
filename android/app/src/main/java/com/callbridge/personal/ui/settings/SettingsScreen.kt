@@ -68,6 +68,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.callbridge.personal.ui.i18n.AppStrings
+import com.callbridge.personal.ui.i18n.LocalAppStrings
 import com.callbridge.personal.ui.theme.AppLanguage
 import com.callbridge.personal.ui.theme.AppThemeMode
 import com.callbridge.personal.ui.theme.CallGreen
@@ -83,6 +84,7 @@ fun SettingsScreen(themeManager: ThemeManager) {
     val accountBalance by themeManager.accountBalance.collectAsState()
     val accountStatus by themeManager.accountStatus.collectAsState()
     val currentLanguage by themeManager.appLanguage.collectAsState()
+    val strings = LocalAppStrings.current
 
     var showLanguageDialog by remember { mutableStateOf(false) }
 
@@ -130,12 +132,12 @@ fun SettingsScreen(themeManager: ThemeManager) {
                         showEditBackendUrlDialog = false
                     }
                 ) {
-                    Text("Save")
+                    Text(strings.actionSave)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEditBackendUrlDialog = false }) {
-                    Text("Cancel")
+                    Text(strings.actionCancel)
                 }
             }
         )
@@ -267,7 +269,7 @@ fun SettingsScreen(themeManager: ThemeManager) {
             },
             confirmButton = {
                 TextButton(onClick = { showLanguageDialog = false }) {
-                    Text("Close")
+                    Text(strings.actionClose)
                 }
             }
         )
@@ -277,7 +279,7 @@ fun SettingsScreen(themeManager: ThemeManager) {
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
-                title = { Text("Settings & Readiness", fontWeight = FontWeight.Bold) },
+                title = { Text(strings.settingsTitle, fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 )
@@ -736,7 +738,7 @@ fun SettingsScreen(themeManager: ThemeManager) {
             // Appearance & Theme Section
             // ==========================================
             Text(
-                text = "Appearance & Theme",
+                text = strings.settingsThemeTitle,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary
@@ -924,7 +926,7 @@ fun SettingsScreen(themeManager: ThemeManager) {
                     SettingDetailRow(
                         icon = Icons.Filled.Info,
                         title = "Application Version",
-                        subtitle = "CallBridge Pro 1.1.0 (Build 12)"
+                        subtitle = "CallBridge Pro 1.1.1 (Build 13)"
                     )
                     SettingDetailRow(
                         icon = Icons.Filled.Info,
