@@ -154,13 +154,27 @@ npm run build
 npm start
 ```
 
-### 3. Build & Install Android APK
+### 3. Firebase FCM V1 Setup (Incoming Call Push)
+1. Create a project in [Firebase Console](https://console.firebase.google.com) and register an Android app with package name `com.callbridge.personal`.
+2. Download `google-services.json` and place it at:
+   ```text
+   android/app/google-services.json
+   ```
+3. In Firebase Console → **Project Settings → Service accounts → Generate new private key**, download the Service Account JSON:
+   - **Local dev:** Save as `backend/firebase-adminsdk.json` (git-ignored) and set `FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-adminsdk.json` in `backend/.env`.
+   - **Cloud (Railway/Render):** Paste the single-line JSON into the `FIREBASE_SERVICE_ACCOUNT_JSON` environment variable.
+4. In **Twilio Console → Voice → Push Credentials**, create an **FCM** credential using your Firebase Service Account JSON to get `TWILIO_PUSH_CREDENTIAL_SID`, and point your Twilio number's Voice & SMS webhooks to:
+   - Voice Incoming: `https://<your-backend-domain>/api/v1/voice/incoming`
+   - Voice Outgoing (TwiML App): `https://<your-backend-domain>/api/v1/voice/outgoing`
+   - SMS Incoming: `https://<your-backend-domain>/api/v1/sms/incoming`
+
+### 4. Build & Install Android APK
 ```bash
 cd android
 ./gradlew assembleDebug
 ```
 Pre-compiled APKs are also available in the repository root:
-- **`CallBridge-v1.0.9-debug.apk`** (Latest production build)
+- **`CallBridge-v1.1.1-debug.apk`** (Latest production build with FCM V1 + 8-language UI)
 
 ---
 

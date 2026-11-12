@@ -93,6 +93,34 @@ sequenceDiagram
 
 ---
 
+## 🛠️ প্রোডাকশন সেটআপ গাইড (Firebase FCM V1 + Twilio + Railway)
+
+পাবলিক রিপো ব্যবহারকারীরা নিজের প্রজেক্ট চালাতে নিচের ধাপগুলো অনুসরণ করতে পারেন:
+
+1. **ব্যাকএন্ড এনভায়রনমেন্ট (`backend/.env`):**
+   ```bash
+   cd backend
+   cp .env.example .env
+   npm install && npm run build && npm start
+   ```
+2. **Firebase FCM V1 (ইনকামিং কল রিং হওয়ার জন্য):**
+   - [Firebase Console](https://console.firebase.google.com)-এ নতুন প্রজেক্ট খুলে `com.callbridge.personal` প্যাকেজ নামে Android App যুক্ত করুন।
+   - `google-services.json` ডাউনলোড করে `android/app/google-services.json` পথে রাখুন।
+   - **Project Settings → Service accounts → Generate new private key** থেকে Service Account JSON ডাউনলোড করুন:
+     - **লোকাল ডেভ:** `backend/firebase-adminsdk.json` নামে রাখুন (`FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-adminsdk.json`)।
+     - **ক্লাউড (Railway/Render):** পুরো JSON কনটেন্ট `FIREBASE_SERVICE_ACCOUNT_JSON` ভ্যারিয়েবলে দিন।
+3. **Twilio Webhook কনফিগারেশন:**
+   - TwiML App Voice URL: `https://<your-backend>/api/v1/voice/outgoing`
+   - Purchased Number Voice URL: `https://<your-backend>/api/v1/voice/incoming`
+   - Purchased Number SMS URL: `https://<your-backend>/api/v1/sms/incoming`
+4. **Android APK বিল্ড:**
+   ```bash
+   cd android && ./gradlew assembleDebug
+   ```
+   অথবা রুট ডিরেক্টরি থেকে **`CallBridge-v1.1.1-debug.apk`** সরাসরি ইনস্টল করুন।
+
+---
+
 ## 👨‍💻 আর্কিটেক্ট ও স্রষ্টা (Author & Architect)
 
 **CallBridge** সম্পূর্ণভাবে ডিজাইন, আর্কিটেক্ট এবং তৈরি করেছেন:
