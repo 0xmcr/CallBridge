@@ -28,6 +28,13 @@ const envSchema = z.object({
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(30),
 
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+
+  // Firebase Admin SDK (FCM V1) — one of these must be set for push notifications
+  // On Railway: set FIREBASE_SERVICE_ACCOUNT_JSON to the full JSON contents
+  // Locally: set FIREBASE_SERVICE_ACCOUNT_PATH to the file path
+  FIREBASE_SERVICE_ACCOUNT_JSON: z.string().optional(),
+  FIREBASE_SERVICE_ACCOUNT_PATH: z.string().optional(),
+  FIREBASE_PROJECT_ID: z.string().default('callbridge11'),
 });
 
 const parsed = envSchema.safeParse(process.env);

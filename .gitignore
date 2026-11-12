@@ -75,3 +75,6 @@ secrets/
 # Firebase - NEVER commit
 google-services.json
 GoogleService-Info.plist
+firebase-adminsdk.json
+*-adminsdk-*.json
+serviceAccountKey.json
