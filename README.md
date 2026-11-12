@@ -155,6 +155,8 @@ npm start
 ```
 
 ### 3. Firebase FCM V1 Setup (Incoming Call Push)
+> 📘 **Full Step-by-Step Public Guide:** See **[guides/SETUP_GUIDE.md](guides/SETUP_GUIDE.md)** for exact click-by-click screenshots/URLs covering **Firebase FCM V1**, **Railway Hosting**, **Twilio Setup**, and **Android APK Build**.
+
 1. Create a project in [Firebase Console](https://console.firebase.google.com) and register an Android app with package name `com.callbridge.personal`.
 2. Download `google-services.json` and place it at:
    ```text

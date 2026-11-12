@@ -95,6 +95,8 @@ sequenceDiagram
 
 ## 🛠️ প্রোডাকশন সেটআপ গাইড (Firebase FCM V1 + Twilio + Railway)
 
+> 📘 **বিস্তারিত ধাপে ধাপে ইংরেজি গাইড:** **[guides/SETUP_GUIDE.md](guides/SETUP_GUIDE.md)** ফাইলে Firebase, Railway ও Twilio-এর প্রতিটি ক্লিক ও URL বিস্তারিত দেওয়া আছে।
+
 পাবলিক রিপো ব্যবহারকারীরা নিজের প্রজেক্ট চালাতে নিচের ধাপগুলো অনুসরণ করতে পারেন:
 
 1. **ব্যাকএন্ড এনভায়রনমেন্ট (`backend/.env`):**
