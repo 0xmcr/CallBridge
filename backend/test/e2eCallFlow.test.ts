@@ -68,19 +68,35 @@ describe('Milestone M6: End-to-End Outbound Calling Flow Simulation', () => {
     expect(completedRes.text).toBe('OK');
   });
 
-  it('Step 4: Non-US destinations are strictly blocked by server-side policy', async () => {
-    const nonUsDestination = '+447911123456';
+  it('Step 4: Malformed destinations are strictly blocked by server-side policy', async () => {
+    const malformedDestination = 'not-a-phone-number';
     const res = await request(app)
       .post('/api/v1/voice/outgoing')
       .type('form')
       .send({
-        To: nonUsDestination,
+        To: malformedDestination,
         From: 'client:' + issuedIdentity,
       });
 
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toContain('text/xml');
-    expect(res.text).toContain('Only United States phone numbers are permitted');
+    expect(res.text).toContain('cannot be completed');
     expect(res.text).toContain('<Hangup/>');
+  });
+
+  it('Step 5: Inbound PSTN call routes cleanly to CallBridge operator client', async () => {
+    const res = await request(app)
+      .post('/api/v1/voice/incoming')
+      .type('form')
+      .send({
+        From: '+14155552671',
+        To: '+12025550199',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toContain('text/xml');
+    expect(res.text).toContain('<Dial');
+    expect(res.text).toContain('<Client');
+    expect(res.text).toContain('cb_operator');
   });
 });

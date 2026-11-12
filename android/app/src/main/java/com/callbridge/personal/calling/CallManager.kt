@@ -5,9 +5,17 @@ import android.util.Log
 import com.callbridge.personal.data.local.entity.CallHistoryEntity
 import com.callbridge.personal.data.remote.api.VoiceApiService
 import com.callbridge.personal.data.repository.CallHistoryRepository
+import com.google.firebase.FirebaseApp
+import com.google.firebase.messaging.FirebaseMessaging
+import com.twilio.voice.AcceptOptions
 import com.twilio.voice.Call
 import com.twilio.voice.CallException
+import com.twilio.voice.CallInvite
+import com.twilio.voice.CancelledCallInvite
 import com.twilio.voice.ConnectOptions
+import com.twilio.voice.MessageListener
+import com.twilio.voice.RegistrationException
+import com.twilio.voice.RegistrationListener
 import com.twilio.voice.Voice
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,11 +51,13 @@ class CallManager(
     val activeCallNote: StateFlow<String> = _activeCallNote.asStateFlow()
 
     private var activeCall: Call? = null
+    private var activeCallInvite: CallInvite? = null
     private var activeCallRecordId: String? = null
     private var callStartedAt: Long? = null
     private var callConnectedAt: Long? = null
     private var currentDestination: String = ""
     private var currentContactName: String = ""
+    private var currentDirection: String = "OUTBOUND"
     private var simulationJob: kotlinx.coroutines.Job? = null
     private var callJob: kotlinx.coroutines.Job? = null
 
@@ -114,6 +124,7 @@ class CallManager(
 
         currentDestination = destination
         currentContactName = contactName
+        currentDirection = "OUTBOUND"
         callStartedAt = System.currentTimeMillis()
         callConnectedAt = null
         activeCallRecordId = UUID.randomUUID().toString()
@@ -263,6 +274,7 @@ class CallManager(
         val record = CallHistoryEntity(
             id = activeCallRecordId ?: UUID.randomUUID().toString(),
             destinationE164 = currentDestination,
+            direction = currentDirection,
             status = status,
             startedAt = callStartedAt,
             connectedAt = callConnectedAt,
@@ -307,6 +319,173 @@ class CallManager(
         simulationJob?.cancel()
         simulationJob = null
         activeCall = null
+        activeCallInvite = null
         _callState.value = CallUiState.Idle
+    }
+
+    // =========================================================================
+    // Incoming Call Support (Twilio Voice FCM Push Registration & CallInvite)
+    // =========================================================================
+
+    private val registrationListener = object : RegistrationListener {
+        override fun onRegistered(accessToken: String, fcmToken: String) {
+            Log.d(tag, "Successfully registered for Twilio incoming calls via FCM")
+        }
+
+        override fun onError(registrationException: RegistrationException, accessToken: String, fcmToken: String) {
+            Log.w(tag, "Twilio FCM registration error: ${registrationException.message}")
+        }
+    }
+
+    private val incomingMessageListener = object : MessageListener {
+        override fun onCallInvite(callInvite: CallInvite) {
+            Log.d(tag, "Incoming CallInvite received from ${callInvite.from}")
+            if (_callState.value !is CallUiState.Idle &&
+                _callState.value !is CallUiState.Ended &&
+                _callState.value !is CallUiState.Failed
+            ) {
+                // Already on another active call; reject new invite politely
+                callInvite.reject(context)
+                return
+            }
+
+            activeCallInvite = callInvite
+            currentDestination = callInvite.from ?: "Unknown Caller"
+            currentContactName = ""
+            currentDirection = "INBOUND"
+            _callState.value = CallUiState.IncomingRinging(
+                callerNumber = currentDestination,
+                contactName = ""
+            )
+        }
+
+        override fun onCancelledCallInvite(
+            cancelledCallInvite: CancelledCallInvite,
+            callException: CallException?
+        ) {
+            Log.d(tag, "Incoming CallInvite cancelled: ${cancelledCallInvite.from}")
+            val caller = cancelledCallInvite.from ?: currentDestination
+            activeCallInvite = null
+            if (_callState.value is CallUiState.IncomingRinging) {
+                _callState.value = CallUiState.Idle
+            }
+            val now = System.currentTimeMillis()
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    callHistoryRepository.saveCallRecord(
+                        CallHistoryEntity(
+                            id = UUID.randomUUID().toString(),
+                            destinationE164 = caller,
+                            direction = "INBOUND",
+                            status = "MISSED",
+                            startedAt = now,
+                            endedAt = now,
+                            createdAt = now
+                        )
+                    )
+                } catch (e: Exception) {
+                    Log.e(tag, "Failed to log missed call: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun registerForIncomingCalls(coroutineScope: CoroutineScope, overrideFcmToken: String? = null) {
+        if (FirebaseApp.getApps(context).isEmpty()) {
+            Log.d(tag, "Firebase not configured (google-services.json absent); skipping FCM voice registration")
+            return
+        }
+
+        val handleToken: (String) -> Unit = { fcmToken ->
+            coroutineScope.launch(Dispatchers.IO) {
+                try {
+                    val tokenResponse = voiceApiService.getVoiceToken(
+                        mapOf("identity" to "cb_operator")
+                    )
+                    if (tokenResponse.token.isNotBlank() &&
+                        !tokenResponse.token.startsWith("mock_") &&
+                        !tokenResponse.token.startsWith("dummy_")
+                    ) {
+                        Voice.register(
+                            tokenResponse.token,
+                            Voice.RegistrationChannel.FCM,
+                            fcmToken,
+                            registrationListener
+                        )
+                    }
+                } catch (e: Exception) {
+                    Log.w(tag, "Skipping incoming call registration: ${e.message}")
+                }
+            }
+        }
+
+        if (!overrideFcmToken.isNullOrBlank()) {
+            handleToken(overrideFcmToken)
+        } else {
+            try {
+                FirebaseMessaging.getInstance().token.addOnSuccessListener { fcmToken ->
+                    if (!fcmToken.isNullOrBlank()) {
+                        handleToken(fcmToken)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(tag, "Unable to obtain FCM token: ${e.message}")
+            }
+        }
+    }
+
+    fun handleIncomingCallMessage(data: Map<String, String>): Boolean {
+        return try {
+            Voice.handleMessage(context, data, incomingMessageListener)
+        } catch (e: Exception) {
+            Log.e(tag, "Failed to process incoming Twilio push message: ${e.message}")
+            false
+        }
+    }
+
+    fun acceptIncomingCall() {
+        val invite = activeCallInvite ?: return
+        activeCallInvite = null
+        callStartedAt = System.currentTimeMillis()
+        callConnectedAt = null
+        activeCallRecordId = UUID.randomUUID().toString()
+        _isMuted.value = false
+        _isSpeakerOn.value = false
+        _isHeld.value = false
+        _activeCallNote.value = ""
+        audioDeviceManager.setSpeakerphoneOn(false)
+        _callState.value = CallUiState.Connecting(
+            destination = currentDestination,
+            contactName = currentContactName
+        )
+
+        val acceptOptions = AcceptOptions.Builder().build()
+        activeCall = invite.accept(context, acceptOptions, callListener)
+    }
+
+    fun rejectIncomingCall() {
+        val invite = activeCallInvite ?: return
+        activeCallInvite = null
+        invite.reject(context)
+        val now = System.currentTimeMillis()
+        val caller = currentDestination
+        _callState.value = CallUiState.Idle
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                callHistoryRepository.saveCallRecord(
+                    CallHistoryEntity(
+                        id = UUID.randomUUID().toString(),
+                        destinationE164 = caller,
+                        direction = "INBOUND",
+                        status = "REJECTED",
+                        startedAt = now,
+                        endedAt = now,
+                        createdAt = now
+                    )
+                )
+            } catch (e: Exception) {
+                Log.e(tag, "Failed to log rejected call: ${e.message}")
+            }
+        }
     }
 }

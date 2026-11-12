@@ -30,7 +30,7 @@ describe('Twilio Voice API Endpoints', () => {
       expect(res.text).toContain('statusCallback');
     });
 
-    it('rejects non-US numbers with policy enforcement and hangup', async () => {
+    it('allows valid international E.164 numbers (e.g. UK +44)', async () => {
       const res = await request(app)
         .post('/api/v1/voice/outgoing')
         .type('form')
@@ -38,7 +38,19 @@ describe('Twilio Voice API Endpoints', () => {
 
       expect(res.status).toBe(200);
       expect(res.headers['content-type']).toContain('text/xml');
-      expect(res.text).toContain('Only United States phone numbers are permitted');
+      expect(res.text).toContain('<Dial');
+      expect(res.text).toContain('+442071838750');
+    });
+
+    it('rejects malformed numbers with policy enforcement and hangup', async () => {
+      const res = await request(app)
+        .post('/api/v1/voice/outgoing')
+        .type('form')
+        .send({ To: '+000abc' });
+
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toContain('text/xml');
+      expect(res.text).toContain('cannot be completed');
       expect(res.text).toContain('<Hangup/>');
     });
 
@@ -51,6 +63,21 @@ describe('Twilio Voice API Endpoints', () => {
       expect(res.status).toBe(400);
       expect(res.headers['content-type']).toContain('text/xml');
       expect(res.text).toContain('<Hangup/>');
+    });
+  });
+
+  describe('POST /api/v1/voice/incoming', () => {
+    it('routes incoming PSTN call to CallBridge Android client', async () => {
+      const res = await request(app)
+        .post('/api/v1/voice/incoming')
+        .type('form')
+        .send({ From: '+14155552671' });
+
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toContain('text/xml');
+      expect(res.text).toContain('<Dial');
+      expect(res.text).toContain('<Client');
+      expect(res.text).toContain('cb_operator');
     });
   });
 

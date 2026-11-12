@@ -30,6 +30,7 @@ signing.properties
 # === Backend ===
 backend/node_modules/
 backend/dist/
+backend/data/
 backend/.env
 backend/.env.local
 backend/.env.production

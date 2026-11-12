@@ -15,8 +15,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.ui.Modifier
@@ -37,6 +39,7 @@ import com.callbridge.personal.data.repository.ContactsRepository
 import com.callbridge.personal.data.repository.MessagesRepository
 import com.callbridge.personal.navigation.Screen
 import com.callbridge.personal.ui.activecall.ActiveCallScreen
+import com.callbridge.personal.ui.activecall.IncomingCallScreen
 import com.callbridge.personal.ui.components.CallBridgeBottomBar
 import com.callbridge.personal.ui.contacts.AddEditContactScreen
 import com.callbridge.personal.ui.contacts.ContactDetailScreen
@@ -183,6 +186,11 @@ fun MainApp(
     val isDialSoundEnabled by themeManager.dialSoundEnabled.collectAsState()
     val hasCompletedOnboarding by themeManager.hasCompletedOnboarding.collectAsState()
     val appLanguage by themeManager.appLanguage.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        callManager.registerForIncomingCalls(coroutineScope)
+    }
 
     // Show BottomBar consistently on primary top-level tabs
     val isBottomBarVisible = currentRoute in listOf(
@@ -515,5 +523,23 @@ fun MainApp(
                 SettingsScreen(themeManager = themeManager)
             }
         }
+    }
+
+    // Full-Screen Incoming Call Ringing Overlay
+    val incomingState = callState as? CallUiState.IncomingRinging
+    if (incomingState != null) {
+        IncomingCallScreen(
+            callerNumber = incomingState.callerNumber,
+            contactName = incomingState.contactName,
+            onAccept = {
+                onCheckAudioPermission {
+                    callManager.acceptIncomingCall()
+                    navController.navigate(Screen.ActiveCall.createRoute(incomingState.callerNumber))
+                }
+            },
+            onReject = {
+                callManager.rejectIncomingCall()
+            }
+        )
     }
 }

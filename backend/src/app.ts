@@ -42,8 +42,13 @@ app.get('/', (_req: Request, res: Response) => {
     endpoints: {
       health: '/api/v1/health',
       token: '/api/v1/voice/token',
-      outgoing: '/api/v1/voice/outgoing',
-      statusCallback: '/api/v1/voice/status'
+      outgoingCall: '/api/v1/voice/outgoing',
+      incomingCall: '/api/v1/voice/incoming',
+      statusCallback: '/api/v1/voice/status',
+      smsSend: '/api/v1/sms/send',
+      smsIncoming: '/api/v1/sms/incoming',
+      smsMessages: '/api/v1/sms/messages',
+      accountBalance: '/api/v1/account/balance'
     }
   });
 });

@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import twilio from 'twilio';
 import { config } from '../config/env';
 import { logger, redactPhoneNumber } from '../logging/logger';
@@ -12,18 +14,52 @@ export interface SmsRecord {
   status: 'sent' | 'delivered' | 'received' | 'failed';
 }
 
-// In-memory persistent cache for messages during server session
-const messageHistory: SmsRecord[] = [
-  {
-    id: 'msg_welcome_demo_01',
-    from: config.TWILIO_PHONE_NUMBER || '+12025550199',
-    to: '+12025550143',
-    body: 'Hello from CallBridge! Your Twilio VoIP & SMS hub is now active.',
-    timestamp: Date.now() - 1000 * 60 * 30,
-    direction: 'outbound',
-    status: 'delivered',
-  },
-];
+const DATA_DIR = path.resolve(process.cwd(), 'data');
+const SMS_STORE_PATH = path.join(DATA_DIR, 'sms_history.json');
+
+function loadPersistedMessages(): SmsRecord[] {
+  try {
+    if (fs.existsSync(SMS_STORE_PATH)) {
+      const raw = fs.readFileSync(SMS_STORE_PATH, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    }
+  } catch (err: any) {
+    logger.warn('Could not load persisted SMS history; starting with default seed', {
+      error: err.message,
+    });
+  }
+
+  return [
+    {
+      id: 'msg_welcome_demo_01',
+      from: config.TWILIO_PHONE_NUMBER || '+12025550199',
+      to: '+12025550143',
+      body: 'Hello from CallBridge! Your Twilio VoIP & SMS hub is now active.',
+      timestamp: Date.now() - 1000 * 60 * 30,
+      direction: 'outbound',
+      status: 'delivered',
+    },
+  ];
+}
+
+function persistMessages(records: SmsRecord[]): void {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    // Keep up to 500 recent messages in file store
+    const trimmed = records.slice(0, 500);
+    fs.writeFileSync(SMS_STORE_PATH, JSON.stringify(trimmed, null, 2), 'utf-8');
+  } catch (err: any) {
+    logger.warn('Failed to persist SMS history to disk', { error: err.message });
+  }
+}
+
+// Persistent store backed by disk JSON + fast in-memory cache
+const messageHistory: SmsRecord[] = loadPersistedMessages();
 
 /**
  * Sends outbound SMS via Twilio Messages API.
@@ -50,6 +86,7 @@ export async function sendOutboundSms(to: string, body: string): Promise<SmsReco
       status: 'sent',
     };
     messageHistory.unshift(mockRecord);
+    persistMessages(messageHistory);
     return mockRecord;
   }
 
@@ -76,6 +113,7 @@ export async function sendOutboundSms(to: string, body: string): Promise<SmsReco
       status: (twilioMsg.status as any) || 'sent',
     };
     messageHistory.unshift(record);
+    persistMessages(messageHistory);
     return record;
   } catch (error: any) {
     logger.error('Failed to send outbound SMS via Twilio', {
@@ -113,6 +151,7 @@ export function handleInboundSmsWebhook(from: string, to: string, body: string, 
   };
 
   messageHistory.unshift(record);
+  persistMessages(messageHistory);
   logger.info('Inbound SMS received and logged', {
     from: redactPhoneNumber(from),
     id: record.id,

@@ -16,6 +16,8 @@ const envSchema = z.object({
   TWILIO_TWIML_APP_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_PHONE_NUMBER: z.string().optional(),
+  TWILIO_PUSH_CREDENTIAL_SID: z.string().optional(),
+  DEFAULT_CLIENT_IDENTITY: z.string().default('cb_operator'),
 
   // Policy
   ALLOWED_CALL_COUNTRY_CODES: z.string().default('+1'),

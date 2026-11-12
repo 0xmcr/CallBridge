@@ -33,10 +33,13 @@ export function generateVoiceAccessToken(identity: string = 'cb_operator'): Voic
     ttl: config.TOKEN_TTL_SECONDS,
   });
 
-  // Grant access to Twilio Voice
+  // Grant access to Twilio Voice (Both Outbound and Inbound)
   const voiceGrant = new VoiceGrant({
     outgoingApplicationSid: twimlAppSid,
-    incomingAllow: false, // MVP is strictly outbound
+    incomingAllow: true,
+    ...(config.TWILIO_PUSH_CREDENTIAL_SID
+      ? { pushCredentialSid: config.TWILIO_PUSH_CREDENTIAL_SID }
+      : {}),
   });
 
   token.addGrant(voiceGrant);
@@ -163,6 +166,40 @@ export function generateOutboundTwiML(destinationNumber: string): string {
     statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
     statusCallbackMethod: 'POST',
   }, destinationNumber);
+
+  return response.toString();
+}
+
+/**
+ * Generates TwiML to route an incoming PSTN call on our Twilio number
+ * directly to the registered CallBridge Android VoIP Client.
+ */
+export function generateInboundTwiML(
+  fromNumber: string,
+  clientIdentity: string = config.DEFAULT_CLIENT_IDENTITY
+): string {
+  const VoiceResponse = twilio.twiml.VoiceResponse;
+  const response = new VoiceResponse();
+
+  logger.info('Routing inbound call to CallBridge client', {
+    from: redactPhoneNumber(fromNumber),
+    clientIdentity,
+  });
+
+  const dial = response.dial({
+    callerId: fromNumber || config.TWILIO_PHONE_NUMBER || '+10000000000',
+    answerOnBridge: true,
+    timeout: 30,
+  });
+
+  dial.client(
+    {
+      statusCallback: `${config.PUBLIC_BASE_URL}/api/v1/voice/status`,
+      statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
+      statusCallbackMethod: 'POST',
+    },
+    clientIdentity
+  );
 
   return response.toString();
 }

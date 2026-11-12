@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { generateVoiceAccessToken, generateOutboundTwiML } from '../services/twilioService';
+import { generateVoiceAccessToken, generateOutboundTwiML, generateInboundTwiML } from '../services/twilioService';
 import { verifyTwilioWebhook } from '../middleware/twilioSignature';
 import { logger, redactPhoneNumber } from '../logging/logger';
 
@@ -38,6 +38,17 @@ router.post('/outgoing', verifyTwilioWebhook, (req: Request, res: Response) => {
   // Normalize number format: ensure + prefix
   const normalizedNumber = destination.startsWith('+') ? destination : `+${destination}`;
   const twimlXml = generateOutboundTwiML(normalizedNumber);
+
+  res.type('text/xml').send(twimlXml);
+});
+
+/**
+ * POST /api/v1/voice/incoming
+ * TwiML Voice URL webhook called by Twilio when an external caller dials our Twilio number.
+ */
+router.post('/incoming', verifyTwilioWebhook, (req: Request, res: Response) => {
+  const from = (req.body.From as string) || (req.body.Caller as string) || 'Unknown';
+  const twimlXml = generateInboundTwiML(from);
 
   res.type('text/xml').send(twimlXml);
 });

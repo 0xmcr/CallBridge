@@ -15,6 +15,11 @@ sealed interface CallUiState {
         val contactName: String = ""
     ) : CallUiState
 
+    data class IncomingRinging(
+        val callerNumber: String,
+        val contactName: String = ""
+    ) : CallUiState
+
     data class Connected(
         val destination: String,
         val contactName: String = "",
