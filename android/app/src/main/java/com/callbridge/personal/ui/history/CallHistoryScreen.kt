@@ -328,7 +328,7 @@ fun CallHistoryItemCard(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = FormatUtils.formatNanpDisplay(item.destinationE164),
+                    text = FormatUtils.formatDisplayNumber(item.destinationE164),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )

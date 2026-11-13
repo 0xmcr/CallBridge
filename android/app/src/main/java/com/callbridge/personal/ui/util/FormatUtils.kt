@@ -639,6 +639,28 @@ object FormatUtils {
     }
 
     /**
+     * Formats any phone number (US or International) properly for display.
+     * US numbers become "+1 (XXX) XXX-XXXX", international numbers maintain proper country code and spacing.
+     */
+    fun formatDisplayNumber(rawNumber: String): String {
+        val trimmed = rawNumber.trim()
+        if (trimmed.isEmpty()) return ""
+        val cleaned = trimmed.replace("[^0-9+]".toRegex(), "")
+        if (cleaned.startsWith("+1") && cleaned.length == 12) {
+            return formatNanpDisplay(cleaned.removePrefix("+1"))
+        }
+        if (cleaned.startsWith("+")) {
+            val country = resolveCountryInfo(cleaned)
+            val nationalPart = cleaned.removePrefix(country.dialCode)
+            return if (nationalPart.isNotEmpty()) "${country.dialCode} $nationalPart" else cleaned
+        }
+        if (cleaned.length == 10) {
+            return formatNanpDisplay(cleaned)
+        }
+        return rawNumber
+    }
+
+    /**
      * Validates whether national digits form a legitimate North American Numbering Plan number.
      * US numbers require 10 digits where:
      * - Area code (digits 0-2) cannot start with 0 or 1

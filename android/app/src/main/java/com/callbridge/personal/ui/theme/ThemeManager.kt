@@ -53,13 +53,13 @@ class ThemeManager(context: Context) {
     private val _hasCompletedOnboarding = MutableStateFlow(loadHasCompletedOnboarding())
     val hasCompletedOnboarding: StateFlow<Boolean> = _hasCompletedOnboarding.asStateFlow()
 
-    private val _accountBalance = MutableStateFlow<String?>("$14.50 USD")
+    private val _accountBalance = MutableStateFlow<String?>("$14.35 USD")
     val accountBalance: StateFlow<String?> = _accountBalance.asStateFlow()
 
     private val _accountStatus = MutableStateFlow<String?>("Active")
     val accountStatus: StateFlow<String?> = _accountStatus.asStateFlow()
 
-    private val _accountPhoneNumbers = MutableStateFlow<List<String>>(listOf("+1 (202) 555-0199"))
+    private val _accountPhoneNumbers = MutableStateFlow<List<String>>(listOf("+13254426667"))
     val accountPhoneNumbers: StateFlow<List<String>> = _accountPhoneNumbers.asStateFlow()
 
     fun refreshAccountTelemetry(scope: kotlinx.coroutines.CoroutineScope) {
@@ -129,7 +129,7 @@ class ThemeManager(context: Context) {
     }
 
     private fun loadCallerId(): String {
-        return prefs.getString("user_caller_id", "+1 (202) 555-0199") ?: "+1 (202) 555-0199"
+        return prefs.getString("user_caller_id", "+13254426667") ?: "+13254426667"
     }
 
     fun setCallerId(number: String) {
@@ -139,7 +139,7 @@ class ThemeManager(context: Context) {
     }
 
     private fun loadBackendUrl(): String {
-        return prefs.getString("backend_url", "http://10.0.2.2:3000/") ?: "http://10.0.2.2:3000/"
+        return prefs.getString("backend_url", "https://callbridge.up.railway.app") ?: "https://callbridge.up.railway.app"
     }
 
     fun setBackendUrl(url: String) {

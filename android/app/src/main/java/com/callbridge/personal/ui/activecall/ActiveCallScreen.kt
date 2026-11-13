@@ -111,10 +111,14 @@ fun ActiveCallScreen(
         }
     }
 
-    // Auto-return when call ends or fails
+    // Auto-return when call successfully ends
     LaunchedEffect(callState) {
-        if (callState is CallUiState.Ended || callState is CallUiState.Failed) {
-            delay(1200L)
+        if (callState is CallUiState.Ended) {
+            delay(1500L)
+            onEndCall()
+        } else if (callState is CallUiState.Failed) {
+            // Give user 6 seconds to read the error message or tap End Call
+            delay(6000L)
             onEndCall()
         }
     }
@@ -153,11 +157,11 @@ fun ActiveCallScreen(
         callState is CallUiState.RequestingPermission -> "Requesting Audio Permission..."
         callState is CallUiState.FetchingToken -> strings.callAuthenticating
         callState is CallUiState.Connecting -> strings.callConnecting
-        callState is CallUiState.Ringing -> "Ringing..."
+        callState is CallUiState.Ringing -> "Ringing... (Waiting for answer)"
         callState is CallUiState.Connected -> strings.callConnected
         callState is CallUiState.Ending -> "Ending Call..."
         callState is CallUiState.Ended -> "${strings.callEnded} (${callState.durationSeconds}s)"
-        callState is CallUiState.Failed -> "Call Failed: ${callState.userMessage}"
+        callState is CallUiState.Failed -> callState.userMessage
         else -> "Calling..."
     }
 

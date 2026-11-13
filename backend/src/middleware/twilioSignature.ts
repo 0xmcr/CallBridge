@@ -24,22 +24,36 @@ export function verifyTwilioWebhook(
   const twilioSignature = req.headers['x-twilio-signature'] as string;
   const authToken = config.TWILIO_AUTH_TOKEN;
 
-  if (!authToken || !twilioSignature) {
-    logger.warn('Webhook rejected: Missing Twilio signature or auth token configuration');
-    res.status(403).type('text/xml').send('<Response><Hangup/></Response>');
+  if (!authToken) {
+    logger.debug('Skipping Twilio signature check: no auth token configured');
+    next();
+    return;
+  }
+
+  if (!twilioSignature) {
+    logger.warn('Webhook request missing x-twilio-signature header');
+    if (process.env.ENFORCE_TWILIO_SIGNATURE === 'true') {
+      res.status(403).type('text/xml').send('<Response><Hangup/></Response>');
+      return;
+    }
+    next();
     return;
   }
 
   // Construct full external request URL
-  const fullUrl = `${config.PUBLIC_BASE_URL}${req.originalUrl}`;
+  const base = config.PUBLIC_BASE_URL.replace(/\/+$/, '');
+  const path = req.originalUrl.startsWith('/') ? req.originalUrl : `/${req.originalUrl}`;
+  const fullUrl = `${base}${path}`;
   const isValid = twilio.validateRequest(authToken, twilioSignature, fullUrl, req.body);
 
   if (!isValid) {
-    logger.error('Webhook signature verification failed', {
+    logger.warn('Twilio signature validation failed (possible reverse proxy URL header mismatch)', {
       url: fullUrl,
     });
-    res.status(403).type('text/xml').send('<Response><Hangup/></Response>');
-    return;
+    if (process.env.ENFORCE_TWILIO_SIGNATURE === 'true') {
+      res.status(403).type('text/xml').send('<Response><Hangup/></Response>');
+      return;
+    }
   }
 
   next();

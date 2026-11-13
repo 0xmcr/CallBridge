@@ -19,16 +19,16 @@ import com.twilio.voice.RegistrationListener
 import com.twilio.voice.Voice
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.UUID
 
 class CallManager(
     private val context: Context,
-    private val voiceApiService: VoiceApiService,
+    private val apiServiceProvider: () -> VoiceApiService,
     private val callHistoryRepository: CallHistoryRepository
 ) {
 
@@ -58,16 +58,17 @@ class CallManager(
     private var currentDestination: String = ""
     private var currentContactName: String = ""
     private var currentDirection: String = "OUTBOUND"
-    private var simulationJob: kotlinx.coroutines.Job? = null
     private var callJob: kotlinx.coroutines.Job? = null
 
     private val callListener = object : Call.Listener {
         override fun onRinging(call: Call) {
             Log.d(tag, "Call ringing: ${call.sid}")
             _callState.value = CallUiState.Ringing(currentDestination)
+            audioDeviceManager.startRingbackTone()
         }
 
         override fun onConnected(call: Call) {
+            audioDeviceManager.stopRingbackTone()
             val now = System.currentTimeMillis()
             callConnectedAt = now
             Log.d(tag, "Call connected: ${call.sid}")
@@ -86,15 +87,20 @@ class CallManager(
         }
 
         override fun onConnectFailure(call: Call, callException: CallException) {
+            audioDeviceManager.stopRingbackTone()
+            audioDeviceManager.stopCallAudio()
             Log.e(tag, "Call connect failure: ${callException.message} (code ${callException.errorCode})")
+            val userMsg = "${callException.message ?: "Failed to connect call"} (Twilio code ${callException.errorCode})"
             finalizeCallRecord(
                 status = "FAILED",
                 errorCode = callException.errorCode.toString(),
-                errorMessage = callException.message ?: "Failed to connect call"
+                errorMessage = userMsg
             )
         }
 
         override fun onDisconnected(call: Call, callException: CallException?) {
+            audioDeviceManager.stopRingbackTone()
+            audioDeviceManager.stopCallAudio()
             Log.d(tag, "Call disconnected")
             val status = if (callException != null) "FAILED" else "COMPLETED"
             val errorCode = callException?.errorCode?.toString()
@@ -132,82 +138,66 @@ class CallManager(
         _isSpeakerOn.value = false
         _isHeld.value = false
         _activeCallNote.value = ""
-        audioDeviceManager.setSpeakerphoneOn(false)
 
         _callState.value = CallUiState.FetchingToken
 
         callJob?.cancel()
-        simulationJob?.cancel()
 
         callJob = coroutineScope.launch(Dispatchers.IO) {
             try {
                 if (!isActive) return@launch
 
-                // 1. Fetch short-lived token from backend over HTTPS
-                val tokenResponse = voiceApiService.getVoiceToken(
+                // Prepare hardware audio for VoIP call
+                audioDeviceManager.startCallAudio()
+
+                // 1. Fetch short-lived token from backend over HTTPS using dynamic service
+                val apiService = apiServiceProvider()
+                val tokenResponse = apiService.getVoiceToken(
                     mapOf("identity" to "cb_operator")
                 )
 
                 if (!isActive) return@launch
 
-                if (tokenResponse.token.isNotBlank() &&
-                    !tokenResponse.token.startsWith("mock_") &&
-                    !tokenResponse.token.startsWith("dummy_")
+                if (tokenResponse.token.isBlank() ||
+                    tokenResponse.token.startsWith("mock_") ||
+                    tokenResponse.token.startsWith("dummy_")
                 ) {
-                    _callState.value = CallUiState.Connecting(
-                        destination = destination,
-                        contactName = contactName
-                    )
+                    val err = "Backend server returned an invalid or mock token"
+                    Log.e(tag, err)
+                    audioDeviceManager.stopCallAudio()
+                    finalizeCallRecord(status = "FAILED", errorCode = "INVALID_TOKEN", errorMessage = err)
+                    return@launch
+                }
 
-                    // 2. Connect via Twilio Voice SDK
-                    val params = HashMap<String, String>().apply {
-                        put("To", destination)
-                    }
+                _callState.value = CallUiState.Connecting(
+                    destination = destination,
+                    contactName = contactName
+                )
 
-                    val connectOptions = ConnectOptions.Builder(tokenResponse.token)
-                        .params(params)
-                        .build()
+                // 2. Connect via Twilio Voice SDK
+                val params = HashMap<String, String>().apply {
+                    put("To", destination)
+                }
 
-                    if (isActive) {
-                        activeCall = Voice.connect(context, connectOptions, callListener)
-                    }
-                } else {
-                    if (isActive) {
-                        Log.d(tag, "Using interactive Simulation Mode for demonstration")
-                        startSimulationCall(destination, contactName, coroutineScope)
-                    }
+                val connectOptions = ConnectOptions.Builder(tokenResponse.token)
+                    .params(params)
+                    .build()
+
+                if (isActive) {
+                    activeCall = Voice.connect(context, connectOptions, callListener)
                 }
 
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
-                if (isActive) {
-                    Log.w(tag, "Backend token unavailable (${e.message}); launching interactive Simulation Mode")
-                    startSimulationCall(destination, contactName, coroutineScope)
-                }
+                audioDeviceManager.stopCallAudio()
+                val errorMsg = "Call Failed: ${e.localizedMessage ?: e.message ?: "Connection error"}"
+                Log.e(tag, errorMsg, e)
+                finalizeCallRecord(
+                    status = "FAILED",
+                    errorCode = "EXCEPTION",
+                    errorMessage = errorMsg
+                )
             }
-        }
-    }
-
-    private fun startSimulationCall(
-        destination: String,
-        contactName: String,
-        scope: CoroutineScope
-    ) {
-        simulationJob?.cancel()
-        _callState.value = CallUiState.Connecting(destination, contactName)
-        simulationJob = scope.launch(Dispatchers.Default) {
-            kotlinx.coroutines.delay(1200)
-            if (!isActive) return@launch
-            _callState.value = CallUiState.Ringing(destination, contactName)
-            kotlinx.coroutines.delay(2200)
-            if (!isActive) return@launch
-            val now = System.currentTimeMillis()
-            callConnectedAt = now
-            _callState.value = CallUiState.Connected(
-                destination = destination,
-                contactName = contactName,
-                connectedAtMillis = now
-            )
         }
     }
 
@@ -244,8 +234,8 @@ class CallManager(
         _callState.value = CallUiState.Ending
         callJob?.cancel()
         callJob = null
-        simulationJob?.cancel()
-        simulationJob = null
+        audioDeviceManager.stopRingbackTone()
+        audioDeviceManager.stopCallAudio()
         if (activeCall != null) {
             try {
                 activeCall?.disconnect()
@@ -254,6 +244,7 @@ class CallManager(
             }
             activeCall = null
         }
+        val duration = if (callConnectedAt != null) ((System.currentTimeMillis() - callConnectedAt!!) / 1000).toInt() else 0
         finalizeCallRecord(
             status = if (callConnectedAt != null) "COMPLETED" else "CANCELLED",
             errorCode = null,
@@ -266,37 +257,39 @@ class CallManager(
         errorCode: String?,
         errorMessage: String
     ) {
-        val endedAt = System.currentTimeMillis()
-        val duration = if (callConnectedAt != null) {
-            (endedAt - callConnectedAt!!) / 1000
-        } else null
+        audioDeviceManager.stopRingbackTone()
+        audioDeviceManager.stopCallAudio()
+
+        val recordId = activeCallRecordId ?: UUID.randomUUID().toString()
+        val now = System.currentTimeMillis()
+        val started = callStartedAt ?: now
+        val duration = if (callConnectedAt != null) (now - callConnectedAt!!) / 1000 else null
 
         val record = CallHistoryEntity(
-            id = activeCallRecordId ?: UUID.randomUUID().toString(),
+            id = recordId,
             destinationE164 = currentDestination,
             direction = currentDirection,
             status = status,
-            startedAt = callStartedAt,
-            connectedAt = callConnectedAt,
-            endedAt = endedAt,
             durationSeconds = duration,
-            providerCallSid = activeCall?.sid,
+            startedAt = started,
+            connectedAt = callConnectedAt,
+            endedAt = now,
             errorCode = errorCode,
-            note = _activeCallNote.value.trim().ifEmpty { null },
-            createdAt = endedAt
+            note = _activeCallNote.value.ifBlank { if (status == "FAILED") errorMessage else null },
+            createdAt = started
         )
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 callHistoryRepository.saveCallRecord(record)
             } catch (e: Exception) {
-                Log.e(tag, "Error persisting call record to Room: ${e.message}")
+                Log.e(tag, "Failed to save call record", e)
             }
         }
 
-        activeCall = null
-        audioDeviceManager.setSpeakerphoneOn(false)
-        _isHeld.value = false
+        activeCallRecordId = null
+        callStartedAt = null
+        callConnectedAt = null
         _activeCallNote.value = ""
 
         if (status == "FAILED") {
@@ -316,8 +309,8 @@ class CallManager(
     fun resetStateToIdle() {
         callJob?.cancel()
         callJob = null
-        simulationJob?.cancel()
-        simulationJob = null
+        audioDeviceManager.stopRingbackTone()
+        audioDeviceManager.stopCallAudio()
         activeCall = null
         activeCallInvite = null
         _callState.value = CallUiState.Idle
@@ -378,6 +371,7 @@ class CallManager(
                             destinationE164 = caller,
                             direction = "INBOUND",
                             status = "MISSED",
+                            durationSeconds = 0,
                             startedAt = now,
                             endedAt = now,
                             createdAt = now
@@ -399,7 +393,8 @@ class CallManager(
         val handleToken: (String) -> Unit = { fcmToken ->
             coroutineScope.launch(Dispatchers.IO) {
                 try {
-                    val tokenResponse = voiceApiService.getVoiceToken(
+                    val apiService = apiServiceProvider()
+                    val tokenResponse = apiService.getVoiceToken(
                         mapOf("identity" to "cb_operator")
                     )
                     if (tokenResponse.token.isNotBlank() &&
@@ -453,7 +448,7 @@ class CallManager(
         _isSpeakerOn.value = false
         _isHeld.value = false
         _activeCallNote.value = ""
-        audioDeviceManager.setSpeakerphoneOn(false)
+        audioDeviceManager.startCallAudio()
         _callState.value = CallUiState.Connecting(
             destination = currentDestination,
             contactName = currentContactName

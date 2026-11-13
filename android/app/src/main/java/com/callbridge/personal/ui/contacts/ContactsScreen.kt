@@ -322,7 +322,7 @@ private fun ContactItemCard(
                 }
 
                 Text(
-                    text = FormatUtils.formatNanpDisplay(contact.phoneE164),
+                    text = FormatUtils.formatDisplayNumber(contact.phoneE164),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                 )

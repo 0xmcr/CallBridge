@@ -31,11 +31,12 @@ class CallBridgeApplication : Application() {
         com.callbridge.personal.ui.theme.ThemeManager(this)
     }
 
-    val voiceApiService: VoiceApiService
-        get() = ApiClient.createVoiceApiService(themeManager.backendUrl.value)
-
     val callManager: CallManager by lazy {
-        CallManager(this, voiceApiService, callHistoryRepository)
+        CallManager(
+            context = this,
+            apiServiceProvider = { ApiClient.createVoiceApiService(themeManager.backendUrl.value) },
+            callHistoryRepository = callHistoryRepository
+        )
     }
 
     override fun onCreate() {
